@@ -7,28 +7,40 @@ module.exports = grammar({
 
   rules: {
     source_file: $ => seq(
-      optional(repeat(seq($._expr, $._eol))),
-      optional($._expr)
+      optional(repeat(seq(choice($.declaration, $.import_decl, $._eol)))),
     ),
 
-    assignment: $ => seq(
-      optional(choice(
-        optional(seq($.pub, optional($.mutable))),
-        optional($.mutable)
-      )),
+    import_decl: $ => prec.right(99, seq(
+      field('visibility', optional($.pub)),
+      field('mutability', choice($.var, $.const)),
       field('name', $.identifier),
       '=',
-      field('value', $._expr)
-    ),
+      'import',
+      field('file', $.string)
+    )),
+
+    declaration: $ => prec.right(100, seq(
+      field('visibility', optional($.pub)),
+      field('mutability', choice($.var, $.const)),
+      field('name', $.identifier),
+      '=',
+      field('value', $._expr3)
+    )),
+
+    assignment: $ => (seq(
+      field('name', choice($.array_accessor, $.accessor, $.identifier)),
+      '=',
+      field('value', $._expr3)
+    )),
 
     function_call: $ => prec.right(1, seq(
-      field('id', choice($.identifier, $._paren, $.brace_expr)),
+      field('id', choice($.identifier, $.array_accessor, $.accessor, $._paren, $.brace_expr)),
       field('arg', repeat1($._expr2)),
     )),
 
     function_def: $ => prec.right(1, seq(
       '\\',
-      optional(field("args", $._arg_list)),
+      optional(field("arg", $._arg_list)),
       '.',
       field("body", $._expr),
     )),
@@ -47,15 +59,15 @@ module.exports = grammar({
     ),
 
     boolean_expr: $ => prec(30, choice(
-      prec.left(5, seq(field('lhs', $._expr2),field('op',$.eq),field('rhs', $._expr2))),
-      prec.left(5, seq(field('lhs', $._expr2),field('op',$.neq),field('rhs', $._expr2))),
       prec.left(5, seq(field('lhs', $._expr2),field('op',$.geq),field('rhs', $._expr2))),
       prec.left(5, seq(field('lhs', $._expr2),field('op',$.leq),field('rhs', $._expr2))),
       prec.left(5, seq(field('lhs', $._expr2),field('op',$.greater),field('rhs', $._expr2))),
       prec.left(5, seq(field('lhs', $._expr2),field('op',$.less),field('rhs', $._expr2))),
+      prec.left(4, seq(field('lhs', $._expr2),field('op',$.eq),field('rhs', $._expr2))),
+      prec.left(4, seq(field('lhs', $._expr2),field('op',$.neq),field('rhs', $._expr2))),
 
-      prec.left(4, seq(field('lhs', $._expr2),field('op',$.and),field('rhs', $._expr2))),
-      prec.left(4, seq(field('lhs', $._expr2),field('op',$.or),field('rhs', $._expr2)))
+      prec.left(3, seq(field('lhs', $._expr2),field('op',$.and),field('rhs', $._expr2))),
+      prec.left(3, seq(field('lhs', $._expr2),field('op',$.or),field('rhs', $._expr2)))
     )),
 
     math_expr: $ => prec(29, choice(
@@ -68,19 +80,53 @@ module.exports = grammar({
 
     if_expr: $ => seq(
       'if',
-      choice($.boolean_expr, $._paren),
-      $._expr,
+      field('condition', choice($.boolean_expr, $._paren)),
+      field('true', $._expr),
       'else',
-      $._expr,
+      field('false', $._expr),
     ),
 
-    unary_expr: $ => seq(
-      choice($.bang, $.minus, $.plus),
-      choice($.number, $.identifier, $.unary_expr, $.brace_expr, $._paren)
+    record_entry: $ =>seq(
+      field('key',$.identifier), ':', field('value',$._expr2)
     ),
+
+    record_expr: $ => seq(
+      '{',
+      field('record', $.record_entry),
+      optional(
+        field('record', repeat(seq(',', 
+          $.record_entry)))),
+      optional(','),
+      '}'
+    ),
+
+    for_stmt: $ => seq(
+      'for',
+      field('var', $.identifier),
+      'in',
+      field('expr', $._expr4),
+      field('body', $._expr),
+    ),
+
+    while_stmt: $ => seq(
+      'while',
+      field('condition', $.boolean_expr, $._paren),
+      field('body', $._expr),
+    ),
+
+    import_stmt: $ => seq(
+      'import',
+      $.string,
+    ),
+
+    unary_expr: $ => prec.left(10, seq(
+      field('op', choice($.bang, $.minus, $.plus)),
+      choice($.number, $.identifier, $.array_accessor, $.accessor, $.unary_expr, $.brace_expr, $._paren)
+    )),
 
     pub: $ => 'pub',
-    mutable: $ => 'mutable',
+    var: $ => 'var',
+    const: $ => 'const',
 
     string: $ => choice(
       seq(
@@ -120,41 +166,69 @@ module.exports = grammar({
 
     _expr: $ => prec(10, choice(
       $.identifier,
+      $.array_accessor,
+      $.accessor,
       $.function_call,
       $.function_def,
       $.number,
-      $.assignment,
+      $.declaration,
       $.brace_expr,
       $.bracket_expr,
+      $.record_expr,
       $.string,
       $.math_expr,
       $.boolean_expr,
       $._paren,
       $.if_expr,
+      $.for_stmt,
+      $.while_stmt,
       $.unary_expr,
     )),
 
-    _expr2: $ => prec(9, choice(
+    _expr2: $ => prec(8, choice(
       $.identifier,
+      $.accessor,
+      $.array_accessor,
       $.number,
       $.brace_expr,
       $.bracket_expr,
+      $.record_expr,
       $.boolean_expr,
       $.string,
+      $.assignment,
       $.math_expr,
       $.unary_expr,
       $._paren,
     )),
 
+    _expr3: $ => prec(9, choice(
+      $.identifier,
+      $.accessor,
+      $.array_accessor,
+      $.number,
+      $.brace_expr,
+      $.bracket_expr,
+      $.record_expr,
+      $.boolean_expr,
+      $.string,
+      $.assignment,
+      $.math_expr,
+      $.unary_expr,
+      $.if_expr,
+      $.function_def,
+      $.function_call,
+      $._paren,
+    )),
+
     _paren: $ => seq(
       '(',
-      $._expr,
+      $._expr3,
       ')'
     ),
 
     _comma_list: $ => seq(
-      $._expr,
-      optional(repeat(seq(',', $._expr))),
+      $._expr3,
+      optional(repeat(seq(',', $._expr3))),
       optional(',')
     ),
 
@@ -183,6 +257,26 @@ module.exports = grammar({
     mod: $ => '%',
 
     _eol: $ => /[\n*;^.]/,
+
+    item_access: $ => seq(field('id', $.identifier), '[', field('index',$.number), ']'),
+
+    _expr4: $ => prec.left(12, choice(
+      $.identifier,
+      $.accessor,
+      $.array_accessor,
+      $.brace_expr,
+      $.bracket_expr,
+      $.record_expr,
+      $.string,
+      $._paren,
+    )),
+
+    accessor: $ => prec.left(
+      seq(field('lhs',$._expr4), '.', field('rhs',$._expr4))
+    ),
+
+    array_accessor: $ => prec.left(
+      seq(field('id',$._expr4), '[', field('index',choice($.number, $._expr4)), ']')),
 
     identifier: $ => /[a-zA-Z][_\w]*/,
 

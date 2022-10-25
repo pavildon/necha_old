@@ -1,2 +1,30 @@
-a = \a, b, c. a + b + c
-a = "hello world!, have a carrot cake!"
+const std = import "std"
+
+const a = 42
+
+pub const ID = Record {name: String, loc: Record {col: U32, row: U32}}
+
+pub const context = \. ID {
+  ids: (Array ID) []
+}
+
+pub const addId = \*ctx, id. {
+  const len = ctx.ids.len
+  ctx.ids[len] = id
+}
+
+pub const main = \. {
+  var ctx = context ()
+
+  const contents = [
+    {"var", {0, 1}},
+    {"const", {100, 343}},
+  ] 
+
+  for id in contents {
+    ctx.addId id
+  }
+
+  log (parseFile ctx "test.nec")
+
+}

@@ -1,241 +1,539 @@
-==========
-identifier
-==========
-lala
----
-(source_file
-  (identifier))
-
-===========
-identifiers
-===========
-lala
-lala
----
-(source_file
-  (identifier) (identifier))
-
-======
+=======
 numbers
-======
-1.2
-3.2
-4
-2
+=======
+pub var ab = 1.2
+pub const a = 123e-10
+var a = 1
+
 ---
 (source_file
-  (number) (number) (number) (number))
+  (declaration
+    visibility: (pub) mutability: (var) name: (identifier) value: (number))
+  (declaration 
+    visibility: (pub) mutability: (const) name: (identifier) value: (number))
+  (declaration 
+    mutability: (var) name: (identifier) value: (number)))
 
 =============
 function call
 =============
-a_fn la la la
+pub const af = a_fn la la la
+
 ---
 (source_file
-  (function_call
+  (declaration
+    visibility: (pub)
+    mutability: (const)
+    name: (identifier)
+    value: (function_call
       id: (identifier)
       arg: (identifier)
       arg: (identifier)
-      arg: (identifier)))
+      arg: (identifier))))
 
 =============
 function calls
 =============
-a_fn la la la
+const a = a_fn la la la
 
-hello a 2 c
+const b = hello a 2_
+  c
+
 ---
 (source_file
-  (function_call
+  (declaration 
+    mutability: (const)
+    name: (identifier)
+    value: (function_call
       id: (identifier)
       arg: (identifier)
       arg: (identifier)
-      arg: (identifier))
-  (function_call
+      arg: (identifier)))
+  (declaration 
+    mutability: (const)
+    name: (identifier)
+    value: (function_call
       id: (identifier)
       arg: (identifier)
       arg: (number)
-      arg: (identifier)))
+      arg: (identifier))))
 
 ==========
-assignment
+declaration
 ==========
-pub mutable a = a
+pub var a = 133
+
 ---
 (source_file
-  (assignment (pub) (mutable)
-    (identifier) (identifier)))
+  (declaration 
+    visibility: (pub) 
+    mutability: (var)
+    name: (identifier)
+    value: (number)))
 
 ===========
-assignments
+declarations
 ===========
-a = a
-
-a = a _
+var a = a; const a = a _
   a
+
 ---
 (source_file
-  (assignment
-    (identifier) (identifier))
-  (assignment
-    (identifier)
-    (function_call (identifier) (identifier))))
+  (declaration
+    mutability: (var)
+    name: (identifier) 
+    value: (identifier))
+  (declaration
+    mutability: (const)
+    name: (identifier)
+    value: (function_call 
+      id: (identifier) 
+      arg: (identifier))))
 
 =====
 paren
 =====
-f = sum 1 1.3
+var f = (sum 1 1)
+var d = outer _
+  (sum 1 1.3)
 
-another = send _
-  (sum 3 4)
 ---
 (source_file
-  (assignment (identifier) 
-    (function_call (identifier) (number) (number)))
-  (assignment (identifier)
-    (function_call (identifier) (function_call (identifier) (number) (number)))))
+  (declaration 
+    mutability: (var)
+    name: (identifier) 
+    value: (function_call 
+      id: (identifier)
+      arg: (number) 
+      arg: (number)))
+  (declaration 
+    mutability: (var)
+    name: (identifier) 
+    value: 
+      (function_call 
+        id: (identifier) 
+        arg: (function_call 
+          id: (identifier) 
+          arg: (number) 
+          arg: (number)))))
 
 ==========
 brace expr
 ==========
-a = {a}
-s = { 
-  a = 3 
-  a
-  send a
-
-  big { 
-    a = 1.2 
+const s = { 
+  const z = 4
+  afunct {
+    var a = 1.2 
     a
   } z
 }
+
 ---
 (source_file
-  (assignment (identifier) (brace_expr (identifier)))
-  (assignment (identifier) 
-    (brace_expr 
-      (assignment (identifier) (number))
-      (identifier)
-      (function_call (identifier) (identifier))
-      (function_call (identifier) 
-        (brace_expr 
-          (assignment (identifier) (number)) 
-          (identifier)) 
-        (identifier))
-    )
-  )
-)
+  (declaration 
+    mutability: (const) 
+    name: (identifier)
+    value: (brace_expr 
+      (declaration 
+        mutability: (const) name: (identifier) value: (number))
+      (function_call 
+        id: (identifier)
+        arg: (brace_expr
+          (declaration mutability: (var) name: (identifier) value: (number))
+          (identifier))
+        arg: (identifier)))))
 
 =========
 math expr
 =========
-a = 1 + 1
+const a = 1 + 1
 
-calc 1 + 1 + (hola abc) + 2
+const c = (calc 1) + 1 + (hola abc) * 2
+
 ---
 (source_file
- (assignment (identifier)
-  (math_expr 
-   (number) (plus) (number)
-  ))
- (function_call
-  (identifier)
-  (math_expr
-   (math_expr
-    (math_expr
-     (number)
-     (plus)
-     (number))
-    (plus)
-    (function_call
-     (identifier)
-     (identifier)) 
-   )
-   (plus)
-   (number)))
- )
+  (declaration mutability: (const) name: (identifier)
+    value: (math_expr 
+      lhs: (number) 
+      op: (plus) 
+      rhs: (number)))
+  (declaration mutability: (const) name: (identifier)
+    value: (math_expr
+      lhs: (math_expr 
+        lhs: (function_call id: (identifier) arg: (number))
+        op: (plus)
+        rhs: (number))
+      op: (plus)
+      rhs: (math_expr
+          lhs: (function_call id: (identifier) arg: (identifier))
+          op: (mul)
+          rhs: (number)))))
 
 =========
 bool_expr
 =========
-a = c + 1 < (d s)
----
-(source_file
-  (assignment
-    (identifier)
-    (boolean_expr 
-      (math_expr (identifier) (plus) (number))
-      (less) 
-      (function_call (identifier) (identifier)))))
+var a = c + 1 < z == true 
 
-==========
-brace_expr
-==========
-a = [
-  a, 
-  b,
-  {a = 1; mul a}
-]
 ---
 (source_file
-  (assignment (identifier)
-  (bracket_expr (identifier) (identifier) 
-  (brace_expr (assignment (identifier) (number))
-    (function_call (identifier) (identifier))))))
+  (declaration
+    mutability: (var)
+    name: (identifier)
+    value: (boolean_expr 
+      lhs: (boolean_expr
+        lhs: (math_expr lhs: (identifier) op: (plus) rhs: (number))
+        op: (less)
+        rhs: (identifier))
+      op: (eq)
+      rhs: (identifier))))
+
+============
+bracket expr
+============
+const a = [
+  child = 1, 
+  b,
+  {const z = 1; mul z a}
+]
+
+---
+(source_file
+  (declaration 
+    mutability: (const)
+    name: (identifier)
+    value: (bracket_expr 
+        (assignment name: (identifier) value: (number))
+        (identifier)
+        (brace_expr (declaration mutability: (const) name: (identifier) value: (number))
+         (function_call id: (identifier) arg: (identifier) arg: (identifier))))))
 
 =======
 if_expr
 =======
-a = if (b == 2) two else {
-  lala = 8 
+const a = if (b == 2) two else {
+  const lala = 8 
   not_two
 }
+
 ---
 (source_file
-  (assignment (identifier)
-    (if_expr 
-      (boolean_expr 
-        (identifier) (eq) (number)) 
-        (identifier) 
-        (brace_expr (assignment (identifier) (number)) (identifier)))))
+  (declaration 
+    mutability: (const)
+    name: (identifier)
+    value: (if_expr 
+      condition: 
+        (boolean_expr 
+         lhs: (identifier) op: (eq) rhs: (number))
+      true: (identifier)
+      false: 
+        (brace_expr 
+         (declaration 
+          mutability: (const)
+          name: (identifier) 
+          value: (number)) 
+         (identifier)))))
 
 =====
 unary
 =====
-a = -{a = 3
+const a = -{
+  const a = 3
   1 * a}
 
-i = !sending
+const i = !sending
 
-t = !sending and stuck
+const t = !sending and stuck
+
 ---
 (source_file
-  (assignment (identifier)
-    (unary_expr (minus) 
+  (declaration 
+    mutability: (const)
+    name: (identifier)
+    value: (unary_expr 
+      op: (minus)
       (brace_expr 
-        (assignment (identifier) (number))
-        (math_expr (number) (mul) (identifier)))))
-  (assignment (identifier)
-    (unary_expr (bang) (identifier)))
-  (assignment (identifier)
-    (boolean_expr (unary_expr (bang) (identifier))
-      (and) (identifier))))
+       (declaration 
+        mutability: (const)
+        name: (identifier) 
+        value: (number))
+       (math_expr lhs: (number) op: (mul) rhs: (identifier)))))
+  (declaration 
+    mutability: (const)
+    name: (identifier)
+    value: (unary_expr op: (bang) (identifier)))
+  (declaration 
+    mutability: (const)
+    name: (identifier)
+    value: (boolean_expr 
+      lhs: (unary_expr op: (bang) (identifier))
+      op: (and)
+      rhs: (identifier))))
 
 ============
 function_def
 ============
-a = \a, b, c. a + b + c
+pub const a = \a, b, c. a + b + c
 
 ---
 (source_file
-  (assignment
-    (identifier)
-    (function_def
-      (identifier)
-      (identifier)
-      (identifier)
-      (math_expr
-        (math_expr
-          (identifier) (plus) (identifier))
-        (plus) (identifier)))))
+  (declaration
+    visibility: (pub)
+    mutability: (const)
+    name: (identifier)
+    value: 
+      (function_def
+      arg: (identifier)
+      arg: (identifier)
+      arg: (identifier)
+      body: (math_expr
+        lhs: (math_expr
+         lhs: (identifier) op: (plus) rhs: (identifier))
+        op: (plus) 
+        rhs: (identifier)))))
+
+========
+accessor
+========
+pub const a = a.b.c
+
+const compicated = ([z = 1]).z
+const more_compicated = {const a = 1; [z = {b = a * 2; [a = b]}]}.z.b
+
+---
+(source_file
+ (declaration
+  visibility: (pub)
+  mutability: (const)
+  name: (identifier)
+  value: (accessor
+    lhs: (accessor
+      lhs: (identifier)
+      rhs: (identifier))
+    rhs: (identifier)))
+ (declaration
+  mutability: (const)
+  name: (identifier)
+  value: (accessor
+    lhs: (bracket_expr
+      (assignment
+       name: (identifier)
+       value: (number)))
+    rhs: (identifier)))
+ (declaration
+  mutability: (const)
+  name: (identifier)
+  value: (accessor
+    lhs: (accessor
+      lhs: (brace_expr
+        (declaration
+         mutability: (const)
+         name: (identifier)
+         value: (number))
+        (bracket_expr
+         (assignment
+          name: (identifier)
+          value: (brace_expr
+            (math_expr
+             lhs: (assignment
+               name: (identifier)
+               value: (identifier))
+             op: (mul)
+             rhs: (number))
+            (bracket_expr
+             (assignment
+              name: (identifier)
+              value: (identifier)))))))
+      rhs: (identifier))
+    rhs: (identifier))))
+
+==============
+array
+==============
+pub const z = (a[1])
+
+---
+(source_file
+  (declaration 
+    visibility: (pub)
+    mutability: (const)
+    name: (identifier)
+    value: (array_accessor 
+      id: (identifier)
+      index: (number))))
+
+===
+for
+===
+pub const lala = \max . for i in (range 0 max) {
+    log i
+}
+
+---
+(source_file
+  (declaration
+    visibility: (pub)
+    mutability: (const)
+    name: (identifier)
+    value: (function_def arg: (identifier) 
+      body: 
+        (for_stmt
+         var: (identifier)
+         expr: (function_call id: (identifier) arg: (number) arg: (identifier))
+         body: (brace_expr (function_call id: (identifier) arg: (identifier)))))))
+
+=====
+while
+=====
+const find = \arr, item. {
+  var i = 0; 
+  while arr[i] != item and i < arr.len
+    i = i + 1
+
+  if i < arr.len
+    arr[i]
+  else
+    nothing
+}
+
+---
+(source_file
+ (declaration
+  mutability: (const)
+  name: (identifier)
+  value: (function_def
+    arg: (identifier)
+    arg: (identifier)
+    body: (brace_expr
+      (declaration
+       mutability: (var)
+       name: (identifier)
+       value: (number))
+      (while_stmt
+       condition: (boolean_expr
+         lhs: (boolean_expr
+           lhs: (array_accessor
+             id: (identifier)
+             index: (identifier))
+           op: (neq)
+           rhs: (identifier))
+         op: (and)
+         rhs: (boolean_expr
+           lhs: (identifier)
+           op: (less)
+           rhs: (accessor
+             lhs: (identifier)
+             rhs: (identifier))))
+       body: (math_expr
+         lhs: (assignment
+           name: (identifier)
+           value: (identifier))
+         op: (plus)
+         rhs: (number)))
+      (if_expr
+       condition: (boolean_expr
+         lhs: (identifier)
+         op: (less)
+         rhs: (accessor
+           lhs: (identifier)
+           rhs: (identifier)))
+       true: (array_accessor
+         id: (identifier)
+         index: (identifier))
+       false: (identifier))))))
+
+======
+import
+======
+const std = import "std"
+
+const main = \. log std.info.os
+
+---
+(source_file
+ (import_decl
+  mutability: (const)
+  name: (identifier)
+  file: (string
+    (string_fragment)))
+ (declaration
+  mutability: (const)
+  name: (identifier)
+  value: (function_def
+    body: (function_call
+      id: (identifier)
+      arg: (accessor
+        lhs: (accessor
+          lhs: (identifier)
+          rhs: (identifier))
+        rhs: (identifier))))))
+
+======
+record
+======
+const person = \n, l, born_year. {
+  name: "warisnaque",
+  lastname: "waripolo",
+  age: current_year - born_year
+}
+
+const person_name = (person "li" "la" 1982).name
+
+const uno = {
+  uno: 1,
+  dos: 2,
+  tres: "tres!",
+}.uno
+
+---
+(source_file
+ (declaration
+  mutability: (const)
+  name: (identifier)
+  value: (function_def
+    arg: (identifier)
+    arg: (identifier)
+    arg: (identifier)
+    body: (record_expr
+      record: (record_entry
+        key: (identifier)
+        value: (string
+          (string_fragment)))
+      record: (record_entry
+        key: (identifier)
+        value: (string
+          (string_fragment)))
+      record: (record_entry
+        key: (identifier)
+        value: (math_expr
+          lhs: (identifier)
+          op: (minus)
+          rhs: (identifier))))))
+          (declaration
+           mutability: (const)
+           name: (identifier)
+           value: (accessor
+             lhs: (function_call
+               id: (identifier)
+               arg: (string
+                 (string_fragment))
+               arg: (string
+                 (string_fragment))
+               arg: (number))
+             rhs: (identifier)))
+          (declaration
+           mutability: (const)
+           name: (identifier)
+           value: (accessor
+             lhs: (record_expr
+               record: (record_entry
+                 key: (identifier)
+                 value: (number))
+               record: (record_entry
+                 key: (identifier)
+                 value: (number))
+               record: (record_entry
+                 key: (identifier)
+                 value: (string
+                   (string_fragment))))
+             rhs: (identifier))))
 
