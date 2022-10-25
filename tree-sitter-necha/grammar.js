@@ -87,7 +87,7 @@ module.exports = grammar({
     ),
 
     record_entry: $ =>seq(
-      field('key',$.identifier), ':', field('value',$._expr2)
+      field('key',$.identifier), ':', field('value',$._expr3)
     ),
 
     record_expr: $ => seq(
@@ -118,6 +118,8 @@ module.exports = grammar({
       'import',
       $.string,
     ),
+
+    void_expr: $ => seq('(',')'),
 
     unary_expr: $ => prec.left(10, seq(
       field('op', choice($.bang, $.minus, $.plus)),
@@ -175,6 +177,7 @@ module.exports = grammar({
       $.brace_expr,
       $.bracket_expr,
       $.record_expr,
+      $.void_expr,
       $.string,
       $.math_expr,
       $.boolean_expr,
@@ -193,6 +196,7 @@ module.exports = grammar({
       $.brace_expr,
       $.bracket_expr,
       $.record_expr,
+      $.void_expr,
       $.boolean_expr,
       $.string,
       $.assignment,
@@ -210,6 +214,7 @@ module.exports = grammar({
       $.bracket_expr,
       $.record_expr,
       $.boolean_expr,
+      $.void_expr,
       $.string,
       $.assignment,
       $.math_expr,

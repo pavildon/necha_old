@@ -480,7 +480,7 @@ const person_name = (person "li" "la" 1982).name
 
 const uno = {
   uno: 1,
-  dos: 2,
+  dos: noArgsFn (),
   tres: "tres!",
 }.uno
 
@@ -530,7 +530,9 @@ const uno = {
                  value: (number))
                record: (record_entry
                  key: (identifier)
-                 value: (number))
+                 value: (function_call
+                  id: (identifier)
+                  arg: (void_expr)))
                record: (record_entry
                  key: (identifier)
                  value: (string
