@@ -68,10 +68,19 @@ pub fn build(b: *std.build.Builder) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    const exe_tests = b.addTest("src/main.zig");
+    const exe_tests = b.addTest("src/tests.zig");
     exe_tests.setTarget(target);
-    exe_tests.setBuildMode(mode);
-
+    exe_tests.addIncludePath("deps/tree-sitter/include");
+    exe_tests.addIncludePath("deps/quickjs");
+    exe_tests.addCSourceFile("tree-sitter-necha/src/parser.c", &.{});
+    exe_tests.linkLibC();
+    exe_tests.linkLibrary(tree_sitter);
+    exe_tests.linkLibrary(quickjs);
+    exe_tests.setBuildMode(.Debug);
+    if (target.getOsTag() == .windows) {
+        quickjs.addIncludePath("deps/mingw-w64-winpthreads/include");
+        exe_tests.addObjectFile("deps/mingw-w64-winpthreads/lib/libpthread.a");
+    }
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
 
