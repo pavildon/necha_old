@@ -2,7 +2,7 @@ module.exports = grammar({
   name: 'necha',
 
   extras: $ => [
-    /\s/, /_\s*\n/ 
+    /\s/, /_\s*\n/
   ],
 
   rules: {
@@ -27,7 +27,7 @@ module.exports = grammar({
       field('value', $._expr3)
     )),
 
-    assignment: $ => (seq(
+    assignment: $ => prec.right(100, seq(
       field('name', choice($.array_accessor, $.accessor, $.identifier)),
       '=',
       field('value', $._expr3)
@@ -47,35 +47,35 @@ module.exports = grammar({
 
     bracket_expr: $ => seq(
       '[',
-        $._comma_list,
+      $._comma_list,
       ']'
     ),
 
     brace_expr: $ => seq(
       '{',
-          optional(repeat(seq($._expr, $._eol))),
-          optional($._expr),
+      optional(repeat(seq($._expr, $._eol))),
+      optional($._expr),
       '}',
     ),
 
     boolean_expr: $ => prec(30, choice(
-      prec.left(5, seq(field('lhs', $._expr2),field('op',$.geq),field('rhs', $._expr2))),
-      prec.left(5, seq(field('lhs', $._expr2),field('op',$.leq),field('rhs', $._expr2))),
-      prec.left(5, seq(field('lhs', $._expr2),field('op',$.greater),field('rhs', $._expr2))),
-      prec.left(5, seq(field('lhs', $._expr2),field('op',$.less),field('rhs', $._expr2))),
-      prec.left(4, seq(field('lhs', $._expr2),field('op',$.eq),field('rhs', $._expr2))),
-      prec.left(4, seq(field('lhs', $._expr2),field('op',$.neq),field('rhs', $._expr2))),
+      prec.left(5, seq(field('lhs', $._expr2), field('op', $.geq), field('rhs', $._expr2))),
+      prec.left(5, seq(field('lhs', $._expr2), field('op', $.leq), field('rhs', $._expr2))),
+      prec.left(5, seq(field('lhs', $._expr2), field('op', $.greater), field('rhs', $._expr2))),
+      prec.left(5, seq(field('lhs', $._expr2), field('op', $.less), field('rhs', $._expr2))),
+      prec.left(4, seq(field('lhs', $._expr2), field('op', $.eq), field('rhs', $._expr2))),
+      prec.left(4, seq(field('lhs', $._expr2), field('op', $.neq), field('rhs', $._expr2))),
 
-      prec.left(3, seq(field('lhs', $._expr2),field('op',$.and),field('rhs', $._expr2))),
-      prec.left(3, seq(field('lhs', $._expr2),field('op',$.or),field('rhs', $._expr2)))
+      prec.left(3, seq(field('lhs', $._expr2), field('op', $.and), field('rhs', $._expr2))),
+      prec.left(3, seq(field('lhs', $._expr2), field('op', $.or), field('rhs', $._expr2)))
     )),
 
     math_expr: $ => prec(29, choice(
-      prec.left(20, seq(field("lhs", $._expr2),field('op',$.exp),field('rhs', $._expr2))),
-      prec.left(19, seq(field("lhs", $._expr2),field('op',$.div),field('rhs', $._expr2))),
-      prec.left(18, seq(field("lhs", $._expr2),field('op',$.mul),field('rhs', $._expr2))),
-      prec.left(17, seq(field("lhs", $._expr2),field('op',$.minus),field('rhs', $._expr2))),
-      prec.left(16, seq(field("lhs", $._expr2),field('op',$.plus),field('rhs', $._expr2)))
+      prec.left(20, seq(field("lhs", $._expr2), field('op', $.exp), field('rhs', $._expr2))),
+      prec.left(19, seq(field("lhs", $._expr2), field('op', $.div), field('rhs', $._expr2))),
+      prec.left(18, seq(field("lhs", $._expr2), field('op', $.mul), field('rhs', $._expr2))),
+      prec.left(17, seq(field("lhs", $._expr2), field('op', $.minus), field('rhs', $._expr2))),
+      prec.left(16, seq(field("lhs", $._expr2), field('op', $.plus), field('rhs', $._expr2)))
     )),
 
     if_expr: $ => seq(
@@ -86,15 +86,15 @@ module.exports = grammar({
       field('false', $._expr),
     ),
 
-    record_entry: $ =>seq(
-      field('key',$.identifier), ':', field('value',$._expr3)
+    record_entry: $ => seq(
+      field('key', $.identifier), ':', field('value', $._expr3)
     ),
 
     record_expr: $ => seq(
       '{',
       field('record', $.record_entry),
       optional(
-        field('record', repeat(seq(',', 
+        field('record', repeat(seq(',',
           $.record_entry)))),
       optional(','),
       '}'
@@ -119,11 +119,11 @@ module.exports = grammar({
       $.string,
     ),
 
-    void_expr: $ => seq('(',')'),
+    void_expr: $ => seq('(', ')'),
 
     unary_expr: $ => prec.left(10, seq(
       field('op', choice($.bang, $.minus, $.plus)),
-      choice($.number, $.identifier, $.array_accessor, $.accessor, $.unary_expr, $.brace_expr, $._paren)
+      field('expr', choice($.number, $.identifier, $.array_accessor, $.accessor, $.unary_expr, $.brace_expr, $._paren))
     )),
 
     pub: $ => 'pub',
@@ -174,6 +174,7 @@ module.exports = grammar({
       $.function_def,
       $.number,
       $.declaration,
+      $.assignment,
       $.brace_expr,
       $.bracket_expr,
       $.record_expr,
@@ -199,7 +200,6 @@ module.exports = grammar({
       $.void_expr,
       $.boolean_expr,
       $.string,
-      $.assignment,
       $.math_expr,
       $.unary_expr,
       $._paren,
@@ -263,7 +263,7 @@ module.exports = grammar({
 
     _eol: $ => /[\n*;^.]/,
 
-    item_access: $ => seq(field('id', $.identifier), '[', field('index',$.number), ']'),
+    item_access: $ => seq(field('id', $.identifier), '[', field('index', $.number), ']'),
 
     _expr4: $ => prec.left(12, choice(
       $.identifier,
@@ -277,11 +277,16 @@ module.exports = grammar({
     )),
 
     accessor: $ => prec.left(
-      seq(field('lhs',$._expr4), '.', field('rhs',$._expr4))
+      seq(field('lhs', $._expr4), '.', field('rhs', $._expr4))
     ),
 
     array_accessor: $ => prec.left(
-      seq(field('id',$._expr4), '[', field('index',choice($.number, $._expr4)), ']')),
+      seq(field('id', $._expr4),
+        '[',
+        field(
+          'index',
+          choice($.number, $._expr4)),
+        ']')),
 
     identifier: $ => /[a-zA-Z][_\w]*/,
 

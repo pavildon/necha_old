@@ -1,3 +1,4 @@
+**/ccls-cache
 **/node_modules
 zig-out/
 zig-cache/

@@ -168,42 +168,46 @@
       }
     },
     "assignment": {
-      "type": "SEQ",
-      "members": [
-        {
-          "type": "FIELD",
-          "name": "name",
-          "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "array_accessor"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "accessor"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "identifier"
-              }
-            ]
+      "type": "PREC_RIGHT",
+      "value": 100,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "array_accessor"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "accessor"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "identifier"
+                }
+              ]
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "="
+          },
+          {
+            "type": "FIELD",
+            "name": "value",
+            "content": {
+              "type": "SYMBOL",
+              "name": "_expr3"
+            }
           }
-        },
-        {
-          "type": "STRING",
-          "value": "="
-        },
-        {
-          "type": "FIELD",
-          "name": "value",
-          "content": {
-            "type": "SYMBOL",
-            "name": "_expr3"
-          }
-        }
-      ]
+        ]
+      }
     },
     "function_call": {
       "type": "PREC_RIGHT",
@@ -1056,37 +1060,41 @@
             }
           },
           {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "number"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "identifier"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "array_accessor"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "accessor"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "unary_expr"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "brace_expr"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "_paren"
-              }
-            ]
+            "type": "FIELD",
+            "name": "expr",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "number"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "identifier"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "array_accessor"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "accessor"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "unary_expr"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "brace_expr"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "_paren"
+                }
+              ]
+            }
           }
         ]
       }
@@ -1271,6 +1279,10 @@
           },
           {
             "type": "SYMBOL",
+            "name": "assignment"
+          },
+          {
+            "type": "SYMBOL",
             "name": "brace_expr"
           },
           {
@@ -1365,10 +1377,6 @@
           {
             "type": "SYMBOL",
             "name": "string"
-          },
-          {
-            "type": "SYMBOL",
-            "name": "assignment"
           },
           {
             "type": "SYMBOL",
