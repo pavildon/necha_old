@@ -991,7 +991,7 @@ static JSValue js_std_sprintf(JSContext *ctx, JSValueConst this_val,
 static JSValue js_std_printf(JSContext *ctx, JSValueConst this_val,
                              int argc, JSValueConst *argv)
 {
-    return js_printf_internal(ctx, argc, argv, stdout);
+    return js_printf_internal(ctx, argc, argv, stderr);
 }
 
 static FILE *js_std_file_get(JSContext *ctx, JSValueConst obj)
@@ -1015,7 +1015,7 @@ static JSValue js_std_file_puts(JSContext *ctx, JSValueConst this_val,
     size_t len;
 
     if (magic == 0) {
-        f = stdout;
+        f = stderr;
     } else {
         f = js_std_file_get(ctx, this_val);
         if (!f)
@@ -1546,7 +1546,7 @@ static int js_std_init(JSContext *ctx, JSModuleDef *m)
     JS_SetModuleExportList(ctx, m, js_std_funcs,
                            countof(js_std_funcs));
     JS_SetModuleExport(ctx, m, "in", js_new_std_file(ctx, stdin, FALSE, FALSE));
-    JS_SetModuleExport(ctx, m, "out", js_new_std_file(ctx, stdout, FALSE, FALSE));
+    JS_SetModuleExport(ctx, m, "out", js_new_std_file(ctx, stderr, FALSE, FALSE));
     JS_SetModuleExport(ctx, m, "err", js_new_std_file(ctx, stderr, FALSE, FALSE));
     return 0;
 }
@@ -3727,7 +3727,7 @@ static JSValue js_print(JSContext *ctx, JSValueConst this_val,
         str = JS_ToCStringLen(ctx, &len, argv[i]);
         if (!str)
             return JS_EXCEPTION;
-        fwrite(str, 1, len, stdout);
+        fwrite(str, 1, len, stderr);
         JS_FreeCString(ctx, str);
     }
     putchar('\n');

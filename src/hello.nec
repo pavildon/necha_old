@@ -1,0 +1,11 @@
+const fact = \n . if n <= 1 
+              1
+            else
+              (fact n - 1) * n
+
+const main = \. {
+  name = "fellow user"
+  log "hello" name ", have a cake 🎂!"
+  log "the factorial of 5 = " (fact 5)
+}
+
