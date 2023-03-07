@@ -41,7 +41,7 @@ pub const Transpiler = struct {
 
     pub fn run(self: *Self) !void {
         const nir = NirGenerator.gen(self.allocator, self.sources.get("root"));
-        for (nir.instructions.items) |ins, i| {
+        for (nir.instructions.items, 0..) |ins, i| {
             std.debug.print("{d} {s}\n", .{ i, ins });
         }
     }

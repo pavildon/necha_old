@@ -2,26 +2,31 @@ const std = @import("std");
 const log = std.debug.print;
 
 pub fn build(b: *std.build.Builder) void {
-    // Standard target options allows the person running `zig build` to choose
-    // what target to build for. Here we do not override the defaults, which
-    // means any target is allowed, and the default is native. Other options
-    // for restricting supported target set are available.
     const target = b.standardTargetOptions(.{});
 
     // Standard release options allow the person running `zig build` to select
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
-    const mode = b.standardReleaseOptions();
+    const mode = b.standardOptimizeOption(.{});
 
-    const tree_sitter = b.addStaticLibrary("tree-sitter", "src/dummy.zig");
+    const tree_sitter = b.addStaticLibrary(.{
+        .name = "tree-sitter",
+        .root_source_file = .{ .path = "src/dummy.zig" },
+        .target = target,
+        .optimize = mode,
+    });
     tree_sitter.addIncludePath("deps/tree-sitter/include");
     tree_sitter.addIncludePath("deps/tree-sitter/src");
     tree_sitter.addCSourceFile("deps/tree-sitter/src/lib.c", &.{"-g"});
     tree_sitter.linkLibC();
     tree_sitter.install();
-    tree_sitter.setTarget(target);
-    tree_sitter.setBuildMode(mode);
+    tree_sitter.optimize = mode;
 
-    const quickjs = b.addStaticLibrary("quickjs", "src/dummy.zig");
+    const quickjs = b.addStaticLibrary(.{
+        .name = "quickjs",
+        .root_source_file = .{ .path = "src/dummy.zig" },
+        .target = target,
+        .optimize = mode,
+    });
     quickjs.addIncludePath("deps/quickjs");
     quickjs.disable_sanitize_c = true;
     quickjs.addCSourceFiles(&.{
@@ -40,12 +45,13 @@ pub fn build(b: *std.build.Builder) void {
     });
     quickjs.linkLibC();
     quickjs.install();
-    quickjs.setTarget(target);
-    quickjs.setBuildMode(mode);
 
-    const exe = b.addExecutable("necha", "src/main.zig");
-    exe.setTarget(target);
-    exe.setBuildMode(mode);
+    const exe = b.addExecutable(.{
+        .name = "necha",
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = mode,
+    });
     exe.addIncludePath("deps/tree-sitter/include");
     exe.addIncludePath("deps/quickjs");
     exe.addCSourceFile("tree-sitter-necha/src/parser.c", &.{});
@@ -68,15 +74,16 @@ pub fn build(b: *std.build.Builder) void {
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
 
-    const exe_tests = b.addTest("src/tests.zig");
-    exe_tests.setTarget(target);
+    const exe_tests = b.addTest(.{
+        .name = "test",
+        .root_source_file = .{ .path = "src/tests.zig" },
+    });
     exe_tests.addIncludePath("deps/tree-sitter/include");
     exe_tests.addIncludePath("deps/quickjs");
     exe_tests.addCSourceFile("tree-sitter-necha/src/parser.c", &.{});
     exe_tests.linkLibC();
     exe_tests.linkLibrary(tree_sitter);
     exe_tests.linkLibrary(quickjs);
-    exe_tests.setBuildMode(.Debug);
     if (target.getOsTag() == .windows) {
         quickjs.addIncludePath("deps/mingw-w64-winpthreads/include");
         exe_tests.addObjectFile("deps/mingw-w64-winpthreads/lib/libpthread.a");

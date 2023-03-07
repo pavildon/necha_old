@@ -84,7 +84,7 @@ pub const Nir = struct {
         var src = try std.ArrayListUnmanaged(u8).initCapacity(allocator, 4096);
         var writer = src.writer(allocator);
 
-        for (self.instructions.items) |ins, n| {
+        for (self.instructions.items, 0..) |ins, n| {
             switch (ins.data) {
                 .string => |s| _ =
                     try writer.print("%{d}. string \"{s}\"\n", .{

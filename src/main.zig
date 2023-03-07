@@ -52,8 +52,8 @@ fn nechaToJs(allocator: std.mem.Allocator, necha_src: []u8) ![]u8 {
 
     var current_node = ts.ts_node_child(root_node, 0);
     while (!ts.ts_node_is_null(current_node)) {
-        const node_type = mem.span(ts.ts_node_type(current_node));
-        if (mem.eql(u8, "assignment", node_type)) {
+        const node_type = (ts.ts_node_type(current_node));
+        if (mem.eql(u8, "assignment", mem.span(node_type))) {
             try writeAssignment(js_wtr, necha_src, current_node);
         } else {
             log("error {s} \n", .{node_type});
@@ -437,7 +437,7 @@ pub fn main() !void {
     var argIter = try std.process.argsWithAllocator(allocator);
     _ = argIter.next();
 
-    const file = mem.span(argIter.next()) orelse return error.InvalidSource;
+    const file = (argIter.next()) orelse return error.InvalidSource;
 
     const cwd = fs.cwd();
     const necha_src = try cwd

@@ -178,7 +178,7 @@ const NirGenerator = struct {
 
         const node_type = std.mem.span(ts.ts_node_type(node));
 
-        if (std.mem.eql(u8, std.mem.span(node_type), "ERROR")) {
+        if (std.mem.eql(u8, (node_type), "ERROR")) {
             return ParseError.InvalidSource;
         } else if (std.mem.eql(u8, node_type, "declaration")) {
             return try self.decl();
