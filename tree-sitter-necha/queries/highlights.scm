@@ -1,2 +1,0 @@
-(identifier) @constant
-(number) @number

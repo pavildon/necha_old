@@ -431,6 +431,11 @@
     }
   },
   {
+    "type": "boolean",
+    "named": true,
+    "fields": {}
+  },
+  {
     "type": "boolean_expr",
     "named": true,
     "fields": {
@@ -908,6 +913,67 @@
           }
         ]
       }
+    }
+  },
+  {
+    "type": "def",
+    "named": true,
+    "fields": {
+      "expr": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "boolean",
+            "named": true
+          },
+          {
+            "type": "fn_call",
+            "named": true
+          },
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "let_in_expr",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          }
+        ]
+      },
+      "ident": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
+    "type": "fn_call",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "number",
+          "named": true
+        }
+      ]
     }
   },
   {
@@ -1631,49 +1697,60 @@
     }
   },
   {
-    "type": "import_decl",
+    "type": "let_expr",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "def",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
+    "type": "let_in_expr",
     "named": true,
     "fields": {
-      "file": {
-        "multiple": false,
+      "def": {
+        "multiple": true,
         "required": true,
         "types": [
           {
-            "type": "string",
+            "type": "and",
+            "named": false
+          },
+          {
+            "type": "def",
             "named": true
           }
         ]
       },
-      "mutability": {
+      "expr": {
         "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "const",
+            "type": "boolean",
             "named": true
           },
           {
-            "type": "var",
+            "type": "fn_call",
             "named": true
-          }
-        ]
-      },
-      "name": {
-        "multiple": false,
-        "required": true,
-        "types": [
+          },
           {
             "type": "identifier",
             "named": true
-          }
-        ]
-      },
-      "visibility": {
-        "multiple": false,
-        "required": false,
-        "types": [
+          },
           {
-            "type": "pub",
+            "type": "let_in_expr",
+            "named": true
+          },
+          {
+            "type": "number",
             "named": true
           }
         ]
@@ -2001,11 +2078,7 @@
       "required": false,
       "types": [
         {
-          "type": "declaration",
-          "named": true
-        },
-        {
-          "type": "import_decl",
+          "type": "let_expr",
           "named": true
         }
       ]
@@ -2324,6 +2397,10 @@
     "named": true
   },
   {
+    "type": "false",
+    "named": false
+  },
+  {
     "type": "for",
     "named": false
   },
@@ -2360,6 +2437,10 @@
     "named": true
   },
   {
+    "type": "let",
+    "named": false
+  },
+  {
     "type": "minus",
     "named": true
   },
@@ -2386,6 +2467,10 @@
   {
     "type": "string_fragment",
     "named": true
+  },
+  {
+    "type": "true",
+    "named": false
   },
   {
     "type": "var",

@@ -7,8 +7,37 @@ module.exports = grammar({
 
   rules: {
     source_file: $ => seq(
-      optional(repeat(seq(choice($.declaration, $.import_decl, $._eol)))),
+      optional(repeat1($.let_expr))),
+
+    let_expr: $ => seq(
+      "let",
+      repeat(seq($.def, "and")),
+      $.def),
+
+    def: $ => seq(
+      field('ident', $.identifier),
+      "=",
+      field('expr', $._exprz)),
+
+    _exprz: $ => choice(
+      $.number,
+      $.identifier,
+      $.boolean,
+      $.fn_call,
+      $.let_in_expr,
     ),
+
+    boolean: $ => choice("true", "false"),
+
+    fn_call: $ => seq(
+      $.identifier,
+      repeat1(choice($.identifier, $.number))),
+
+    let_in_expr: $ => seq(
+      "let",
+      field('def', seq(repeat(seq($.def, "and")), $.def)),
+      "in",
+      field('expr', $._exprz)),
 
     import_decl: $ => prec.right(99, seq(
       field('visibility', optional($.pub)),
