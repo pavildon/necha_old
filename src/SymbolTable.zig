@@ -12,6 +12,7 @@ pub const SymbolInfo = struct {
 pub const SymbolTable = struct {
     const Self = @This();
     const PosNextArr = std.ArrayList(SymbolInfo);
+
     locations: PosNextArr,
     stack_pointer: usize,
     names: std.StringHashMap(usize),

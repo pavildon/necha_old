@@ -228,11 +228,9 @@ const NirGenerator = struct {
 
         const src = self.source;
         var pos = self.table.get(src[start..end]);
-        var location: usize = undefined;
         if (pos) |p| {
             if (p.is_const) {
-                location = p.ins;
-                return location;
+                return p.ins;
             } else {
                 try self.nir.instructions.append(self.allocator, Inst{
                     .data = InstData{ .load = .{ .src = p.ins } },
@@ -249,7 +247,6 @@ const NirGenerator = struct {
             };
 
             try self.nir.instructions.append(self.allocator, n_ins);
-            location = self.nir.instructions.items.len - 1;
         }
 
         return self.nir.instructions.items.len - 1;
