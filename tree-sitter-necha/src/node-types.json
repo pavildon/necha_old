@@ -946,11 +946,21 @@
         ]
       },
       "ident": {
-        "multiple": false,
+        "multiple": true,
         "required": true,
         "types": [
           {
             "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "let_in": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "let_in_expr",
             "named": true
           }
         ]
@@ -1766,6 +1776,26 @@
           },
           {
             "type": "number",
+            "named": true
+          }
+        ]
+      },
+      "ident": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "let_in": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "let_in_expr",
             "named": true
           }
         ]

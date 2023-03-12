@@ -11,9 +11,8 @@ let f = 1
 
 let g = 
   let h = 2
-  and i = 4
-  in 
-    sum h i
+  and i = true
+  in  sum h i
 ---
 (source_file
   (let_expr
@@ -22,7 +21,7 @@ let g =
       number: (number))
     def: (def
       ident: (identifier)
-      expr: (identifier))
+      ident: (identifier))
     def: (def
       ident: (identifier)
       expr: (fn_call (identifier) (number) (identifier)))
@@ -39,13 +38,13 @@ let g =
   (let_expr
     def: (def
       ident: (identifier)
-      expr: (let_in_expr
+      let_in: (let_in_expr
         def: (def
           ident: (identifier)
           number: (number))
         def: (def
           ident: (identifier)
-          number: (number))
+          expr: (boolean))
         expr: (fn_call
           (identifier)
           (identifier)

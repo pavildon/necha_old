@@ -95,8 +95,20 @@
           }
         },
         {
-          "type": "SYMBOL",
-          "name": "identifier"
+          "type": "FIELD",
+          "name": "ident",
+          "content": {
+            "type": "SYMBOL",
+            "name": "identifier"
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "let_in",
+          "content": {
+            "type": "SYMBOL",
+            "name": "let_in_expr"
+          }
         },
         {
           "type": "SYMBOL",
@@ -105,10 +117,6 @@
         {
           "type": "SYMBOL",
           "name": "fn_call"
-        },
-        {
-          "type": "SYMBOL",
-          "name": "let_in_expr"
         }
       ]
     },

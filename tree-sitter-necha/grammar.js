@@ -21,10 +21,10 @@ module.exports = grammar({
 
     _exprz: $ => choice(
       field('number', $.number),
-      $.identifier,
+      field('ident', $.identifier),
+      field('let_in', $.let_in_expr),
       $.boolean,
       $.fn_call,
-      $.let_in_expr,
     ),
 
     boolean: $ => choice("true", "false"),
