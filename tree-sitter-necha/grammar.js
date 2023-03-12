@@ -11,8 +11,8 @@ module.exports = grammar({
 
     let_expr: $ => seq(
       "let",
-      repeat(seq($.def, "and")),
-      $.def),
+      field("def", repeat(seq($.def, "and"))),
+      field("def", $.def)),
 
     def: $ => seq(
       field('ident', $.identifier),
@@ -20,7 +20,7 @@ module.exports = grammar({
       field('expr', $._exprz)),
 
     _exprz: $ => choice(
-      $.number,
+      field('number', $.number),
       $.identifier,
       $.boolean,
       $.fn_call,

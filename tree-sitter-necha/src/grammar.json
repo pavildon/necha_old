@@ -29,24 +29,32 @@
           "value": "let"
         },
         {
-          "type": "REPEAT",
+          "type": "FIELD",
+          "name": "def",
           "content": {
-            "type": "SEQ",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "def"
-              },
-              {
-                "type": "STRING",
-                "value": "and"
-              }
-            ]
+            "type": "REPEAT",
+            "content": {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "def"
+                },
+                {
+                  "type": "STRING",
+                  "value": "and"
+                }
+              ]
+            }
           }
         },
         {
-          "type": "SYMBOL",
-          "name": "def"
+          "type": "FIELD",
+          "name": "def",
+          "content": {
+            "type": "SYMBOL",
+            "name": "def"
+          }
         }
       ]
     },
@@ -79,8 +87,12 @@
       "type": "CHOICE",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "number"
+          "type": "FIELD",
+          "name": "number",
+          "content": {
+            "type": "SYMBOL",
+            "name": "number"
+          }
         },
         {
           "type": "SYMBOL",

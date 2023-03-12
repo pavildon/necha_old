@@ -17,35 +17,35 @@ let g =
 ---
 (source_file
   (let_expr
-    (def
+    def: (def
       ident: (identifier)
-      expr: (number))
-    (def
+      number: (number))
+    def: (def
       ident: (identifier)
       expr: (identifier))
-    (def
+    def: (def
       ident: (identifier)
       expr: (fn_call (identifier) (number) (identifier)))
-    (def
+    def: (def
       ident: (identifier)
       expr: (boolean))
-    (def
+    def: (def
       ident: (identifier)
       expr: (boolean)))
   (let_expr
-    (def
+    def: (def
       ident: (identifier)
-      expr: (number)))
+      number: (number)))
   (let_expr
-    (def
+    def: (def
       ident: (identifier)
       expr: (let_in_expr
         def: (def
           ident: (identifier)
-          expr: (number))
+          number: (number))
         def: (def
           ident: (identifier)
-          expr: (number))
+          number: (number))
         expr: (fn_call
           (identifier)
           (identifier)
