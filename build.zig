@@ -19,7 +19,6 @@ pub fn build(b: *std.build.Builder) void {
     tree_sitter.addCSourceFile("deps/tree-sitter/src/lib.c", &.{"-g"});
     tree_sitter.linkLibC();
     tree_sitter.install();
-    tree_sitter.optimize = mode;
 
     const quickjs = b.addStaticLibrary(.{
         .name = "quickjs",
@@ -84,6 +83,7 @@ pub fn build(b: *std.build.Builder) void {
     exe_tests.linkLibC();
     exe_tests.linkLibrary(tree_sitter);
     exe_tests.linkLibrary(quickjs);
+
     if (target.getOsTag() == .windows) {
         quickjs.addIncludePath("deps/mingw-w64-winpthreads/include");
         exe_tests.addObjectFile("deps/mingw-w64-winpthreads/lib/libpthread.a");
