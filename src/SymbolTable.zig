@@ -61,7 +61,11 @@ pub const SymbolTable = struct {
         const new_sp = self.locations.items[self.stack_pointer].next;
         while (self.locations.items.len > self.stack_pointer) {
             const v = self.locations.pop();
-            try self.names.put(v.name, v.next);
+            if (v.next != 0) {
+                try self.names.put(v.name, v.next);
+            } else {
+                _ = self.names.remove(v.name);
+            }
         }
         self.stack_pointer = new_sp;
     }
