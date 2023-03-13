@@ -24,13 +24,16 @@ let g =
       ident: (identifier))
     def: (def
       ident: (identifier)
-      expr: (fn_call (identifier) (number) (identifier)))
+      fn_call: (fn_call 
+        function: (identifier) 
+        arg: (number) 
+        arg: (identifier)))
     def: (def
       ident: (identifier)
-      expr: (boolean))
+      boolean: (boolean))
     def: (def
       ident: (identifier)
-      expr: (boolean)))
+      boolean: (boolean)))
   (let_expr
     def: (def
       ident: (identifier)
@@ -44,8 +47,8 @@ let g =
           number: (number))
         def: (def
           ident: (identifier)
-          expr: (boolean))
-        expr: (fn_call
-          (identifier)
-          (identifier)
-          (identifier))))))
+          boolean: (boolean))
+        fn_call: (fn_call
+          function: (identifier)
+          arg: (identifier)
+          arg: (identifier))))))

@@ -111,12 +111,20 @@
           }
         },
         {
-          "type": "SYMBOL",
-          "name": "boolean"
+          "type": "FIELD",
+          "name": "fn_call",
+          "content": {
+            "type": "SYMBOL",
+            "name": "fn_call"
+          }
         },
         {
-          "type": "SYMBOL",
-          "name": "fn_call"
+          "type": "FIELD",
+          "name": "boolean",
+          "content": {
+            "type": "SYMBOL",
+            "name": "boolean"
+          }
         }
       ]
     },
@@ -137,23 +145,31 @@
       "type": "SEQ",
       "members": [
         {
-          "type": "SYMBOL",
-          "name": "identifier"
+          "type": "FIELD",
+          "name": "function",
+          "content": {
+            "type": "SYMBOL",
+            "name": "identifier"
+          }
         },
         {
-          "type": "REPEAT1",
+          "type": "FIELD",
+          "name": "arg",
           "content": {
-            "type": "CHOICE",
-            "members": [
-              {
-                "type": "SYMBOL",
-                "name": "identifier"
-              },
-              {
-                "type": "SYMBOL",
-                "name": "number"
-              }
-            ]
+            "type": "REPEAT1",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "SYMBOL",
+                  "name": "identifier"
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "number"
+                }
+              ]
+            }
           }
         }
       ]

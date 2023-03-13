@@ -2,25 +2,46 @@ const std = @import("std");
 const tst = std.testing;
 const HashMap = std.AutoHashMapUnmanaged(u64, RegValue);
 
-const Instr = union(enum) {
-    number: i64,
-    add: struct { lhs: u64, rhs: u64 },
-    mul: struct { lhs: u64, rhs: u64 },
-    begin_fn: struct { end: u64 },
-    end_fn: struct { ret: u64 },
-    pop_param: struct { reg: u64 },
-    push_param: struct { reg: u64 },
-};
+const nir = @import("Nir.zig");
 
 const RegValue = union(enum) {
-    number: i64,
+    number: u64,
     reference: u64,
 };
 
 const State = struct {
     ip: u64,
     reg: HashMap,
+    stack: std.ArrayListUnmanaged(u64),
 };
+
+const BinFn = fn (l: u64, r: u64) u64;
+
+fn add(l: u64, r: u64) u64 {
+    return l + r;
+}
+
+fn mul(l: u64, r: u64) u64 {
+    return l * r;
+}
+
+fn binFn(lhs: RegValue, rhs: RegValue, f: *const BinFn) RegValue {
+    switch (lhs) {
+        .number => |l| {
+            switch (rhs) {
+                .number => |r| {
+                    return .{ .number = f(l, r) };
+                },
+                else => {
+                    unreachable;
+                },
+            }
+        },
+        else => {
+            unreachable;
+        },
+    }
+}
 
 // TODO: NirMachine?
 pub const NirRunner = struct {
@@ -35,12 +56,13 @@ pub const NirRunner = struct {
             ._state = State{
                 .ip = 0,
                 .reg = .{},
+                .stack = try std.ArrayListUnmanaged(u64).initCapacity(alloc, 1024),
             },
         };
         return self;
     }
 
-    pub fn run(self: *Self, code: []const Instr) !void {
+    pub fn run(self: *Self, code: []const nir.Instr) !void {
         while (self._state.ip < code.len) {
             const inst = code[self._state.ip];
             switch (inst) {
@@ -49,53 +71,57 @@ pub const NirRunner = struct {
                 },
                 .add => |m| {
                     const lhs = self._state.reg.get(m.lhs) orelse unreachable;
-                    switch (lhs) {
-                        .number => |l| {
-                            const rhs = self._state.reg.get(m.rhs) orelse unreachable;
-                            switch (rhs) {
-                                .number => |r| {
-                                    try self._state.reg.put(
-                                        self.allocator,
-                                        self._state.ip,
-                                        .{ .number = l + r },
-                                    );
-                                },
-                                else => {
-                                    unreachable;
-                                },
-                            }
-                        },
-                        else => {
-                            unreachable;
-                        },
-                    }
+                    const rhs = self._state.reg.get(m.rhs) orelse unreachable;
+                    try self._state.reg.put(self.allocator, self._state.ip, binFn(lhs, rhs, add));
                 },
                 .mul => |m| {
                     const lhs = self._state.reg.get(m.lhs) orelse unreachable;
-                    switch (lhs) {
-                        .number => |l| {
-                            const rhs = self._state.reg.get(m.rhs) orelse unreachable;
-                            switch (rhs) {
-                                .number => |r| {
-                                    try self._state.reg.put(
-                                        self.allocator,
-                                        self._state.ip,
-                                        .{ .number = l * r },
-                                    );
-                                },
-                                else => {
-                                    unreachable;
-                                },
-                            }
-                        },
-                        else => {
-                            unreachable;
-                        },
+                    const rhs = self._state.reg.get(m.rhs) orelse unreachable;
+                    try self._state.reg.put(self.allocator, self._state.ip, binFn(lhs, rhs, mul));
+                },
+                .fun => |f| {
+                    self._state.ip = f.end + 1;
+                    continue;
+                },
+                .pop_param => {
+                    const reg = self._state.stack.pop();
+                    if (self._state.reg.get(reg)) |v| {
+                        try self._state.reg.put(
+                            self.allocator,
+                            self._state.ip,
+                            v,
+                        );
                     }
                 },
-                else => {
-                    unreachable;
+                .ret => |r| {
+                    const dst = self._state.stack.pop();
+                    if (self._state.reg.get(r.reg)) |v| {
+                        try self._state.reg.put(
+                            self.allocator,
+                            dst,
+                            v,
+                        );
+                    }
+                    self._state.ip = dst + 1;
+                    continue;
                 },
+                .begin_call => |bc| {
+                    try self._state.stack.append(
+                        self.allocator,
+                        bc.end,
+                    );
+                },
+                .push_param => |p| {
+                    try self._state.stack.append(
+                        self.allocator,
+                        p.reg,
+                    );
+                },
+                .call => |c| {
+                    self._state.ip = c.reg + 1;
+                    continue;
+                },
+                .undef => {},
             }
 
             self._state.ip = self._state.ip + 1;
@@ -109,11 +135,12 @@ pub const NirRunner = struct {
 
     pub fn deinit(self: *Self) void {
         self._state.reg.deinit(self.allocator);
+        self._state.stack.deinit(self.allocator);
     }
 };
 
-test "nothing" {
-    const code = [_]Instr{
+test "simple" {
+    const code = [_]nir.Instr{
         .{ .number = 4 },
         .{ .number = 10 },
         .{ .add = .{ .lhs = 0, .rhs = 1 } },
@@ -141,6 +168,36 @@ test "nothing" {
     switch (prod) {
         .number => |n| {
             try tst.expectEqual(n, 6);
+        },
+        else => {
+            unreachable;
+        },
+    }
+}
+
+test "fn_def" {
+    const code = [_]nir.Instr{
+        .{ .fun = .{ .end = 4 } }, // 0
+        .{ .pop_param = .{ .nop = 0 } }, // 1
+        .{ .number = 2 }, // 2
+        .{ .mul = .{ .lhs = 1, .rhs = 2 } }, // 3
+        .{ .ret = .{ .reg = 3 } }, // 4
+        .{ .number = 10 }, // 5
+        .{ .begin_call = .{ .end = 8 } }, // 6
+        .{ .push_param = .{ .reg = 5 } }, // 7
+        .{ .call = .{ .reg = 0 } }, // 8
+    };
+
+    var runner = try NirRunner.init(tst.allocator);
+    defer runner.deinit();
+
+    try runner.run(&code);
+    const state = runner.state();
+
+    const cv = state.reg.get(8) orelse unreachable;
+    switch (cv) {
+        .number => |n| {
+            try tst.expectEqual(n, 20);
         },
         else => {
             unreachable;

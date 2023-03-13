@@ -919,6 +919,16 @@
     "type": "def",
     "named": true,
     "fields": {
+      "boolean": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "boolean",
+            "named": true
+          }
+        ]
+      },
       "expr": {
         "multiple": false,
         "required": true,
@@ -941,6 +951,16 @@
           },
           {
             "type": "number",
+            "named": true
+          }
+        ]
+      },
+      "fn_call": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "fn_call",
             "named": true
           }
         ]
@@ -980,20 +1000,31 @@
   {
     "type": "fn_call",
     "named": true,
-    "fields": {},
-    "children": {
-      "multiple": true,
-      "required": true,
-      "types": [
-        {
-          "type": "identifier",
-          "named": true
-        },
-        {
-          "type": "number",
-          "named": true
-        }
-      ]
+    "fields": {
+      "arg": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          },
+          {
+            "type": "number",
+            "named": true
+          }
+        ]
+      },
+      "function": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -1740,6 +1771,16 @@
     "type": "let_in_expr",
     "named": true,
     "fields": {
+      "boolean": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "boolean",
+            "named": true
+          }
+        ]
+      },
       "def": {
         "multiple": true,
         "required": true,
@@ -1776,6 +1817,16 @@
           },
           {
             "type": "number",
+            "named": true
+          }
+        ]
+      },
+      "fn_call": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "fn_call",
             "named": true
           }
         ]

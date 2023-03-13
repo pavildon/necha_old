@@ -23,15 +23,15 @@ module.exports = grammar({
       field('number', $.number),
       field('ident', $.identifier),
       field('let_in', $.let_in_expr),
-      $.boolean,
-      $.fn_call,
+      field('fn_call', $.fn_call),
+      field('boolean', $.boolean),
     ),
 
     boolean: $ => choice("true", "false"),
 
     fn_call: $ => seq(
-      $.identifier,
-      repeat1(choice($.identifier, $.number))),
+      field('function', $.identifier),
+      field('arg', repeat1(choice($.identifier, $.number)))),
 
     let_in_expr: $ => seq(
       "let",

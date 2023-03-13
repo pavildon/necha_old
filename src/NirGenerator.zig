@@ -11,9 +11,12 @@ var f_expr: ts.TSFieldId = undefined;
 var f_number: ts.TSFieldId = undefined;
 var f_def: ts.TSFieldId = undefined;
 var f_let_in: ts.TSFieldId = undefined;
+var f_fn_call: ts.TSFieldId = undefined;
+var f_function: ts.TSFieldId = undefined;
 
 const ParseError = error{
     InvalidSource,
+    OutOfMemory,
 };
 
 extern fn tree_sitter_necha() *const ts.TSLanguage;
@@ -29,6 +32,8 @@ fn setFieldIds() void {
     f_number = ts.ts_language_field_id_for_name(tree_sitter_necha(), "number", "number".len);
     f_def = ts.ts_language_field_id_for_name(tree_sitter_necha(), "def", "def".len);
     f_let_in = ts.ts_language_field_id_for_name(tree_sitter_necha(), "let_in", "let_in".len);
+    f_fn_call = ts.ts_language_field_id_for_name(tree_sitter_necha(), "fn_call", "fn_call".len);
+    f_function = ts.ts_language_field_id_for_name(tree_sitter_necha(), "function", "function".len);
 }
 
 fn getNodeName(node: ts.TSNode, source: []const u8) []const u8 {
@@ -54,29 +59,31 @@ const Generator = struct {
             if (std.mem.eql(u8, std.mem.span(node_type), "ERROR")) {
                 unreachable;
             } else if (std.mem.eql(u8, std.mem.span(node_type), "let_expr")) {
-                try self.let_root();
+                _ = try self.let_root();
             } else {
                 std.debug.print("other !\n", .{});
             }
         }
     }
 
-    pub fn let_root(self: *Self) !void {
+    pub fn let_root(self: *Self) ParseError!usize {
         var cursor_moved = ts.ts_tree_cursor_goto_first_child(&self.cursor);
         while (cursor_moved) : (cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) {
             const field_id = ts.ts_tree_cursor_current_field_id(&self.cursor);
 
             if (field_id == f_def) {
                 try self.def();
-                std.debug.print("--- \n", .{});
+            } else if (field_id > 0 and field_id != f_def) {
+                return try self.expr(field_id);
             } else {
                 const name = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
-                std.debug.print(")) keywords {s}\n", .{name});
+                std.debug.print("keywords {s}\n", .{name});
             }
         }
+        return 0;
     }
 
-    pub fn def(self: *Self) !void {
+    pub fn def(self: *Self) ParseError!void {
         var cursor_moved = ts.ts_tree_cursor_goto_first_child(&self.cursor);
         var name: ?[]const u8 = null;
         var ip: usize = undefined;
@@ -98,7 +105,12 @@ const Generator = struct {
         }
     }
 
-    pub fn expr(self: *Self, field_id: u64) !usize {
+    pub fn expr(self: *Self, field_id: u64) ParseError!usize {
+        const src = try nir.toString(self.instructions.allocator, self.instructions.items, self.source);
+        defer self.instructions.allocator.free(src);
+
+        const current = ts.ts_tree_cursor_current_node(&self.cursor);
+
         if (field_id == f_number) {
             const num_str = getNodeName(
                 ts.ts_tree_cursor_current_node(&self.cursor),
@@ -112,14 +124,76 @@ const Generator = struct {
                 else => unreachable,
             }
         } else if (field_id == f_ident) {
-            try self.instructions.append(.{ .number = 22 });
+            const name = getNodeName(
+                current,
+                self.source,
+            );
+            const r = self.table.get(name);
+            if (r) |reg| {
+                return reg.ins;
+            } else {
+                const s = ts.ts_node_start_byte(
+                    current,
+                );
+
+                const e = ts.ts_node_end_byte(
+                    current,
+                );
+                try self.instructions.append(
+                    .{ .undef = .{ .start = s, .end = e } },
+                );
+            }
         } else if (field_id == f_let_in) {
-            try self.instructions.append(.{ .number = 33 });
+            try self.table.push();
+            const r = try self.let_root();
+            try self.table.pop();
+            return r;
+        } else if (field_id == f_fn_call) {
+            try self.instructions.append(.{ .begin_call = .{ .end = 0 } });
+            const begin = self.instructions.items.len - 1;
+
+            var cursor_moved = ts.ts_tree_cursor_goto_first_child(&self.cursor);
+            // TODO: ummm..
+            const function: u64 = try self.expr(f_ident);
+
+            cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor);
+            while (cursor_moved) : (cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) {
+                const id = ts.ts_tree_cursor_current_field_id(&self.cursor);
+                if (id > 0) {
+                    std.debug.print("LL {d}\n", .{id});
+                    const i = try self.expr(id);
+                    try self.instructions.append(.{ .push_param = .{ .reg = i } });
+                }
+            }
+            try self.instructions.append(.{ .call = .{ .reg = function } });
+            self.instructions.items[begin] = .{ .begin_call = .{ .end = self.instructions.items.len - 1 } };
         } else {
             try self.instructions.append(.{ .number = 11 });
         }
 
         return self.instructions.items.len - 1;
+    }
+
+    pub fn fn_call(self: *Self) ParseError!void {
+        var cursor_moved = ts.ts_tree_cursor_goto_first_child(&self.cursor);
+        var name: ?[]const u8 = null;
+        var ip: usize = undefined;
+        while (cursor_moved) : (cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) {
+            const field_id = ts.ts_tree_cursor_current_field_id(&self.cursor);
+            if (field_id > 0) {
+                if (name) |n| {
+                    ip = try self.expr(field_id);
+                    try self.table.put(n, ip, true);
+                    _ = ts.ts_tree_cursor_goto_parent(&self.cursor);
+                    return;
+                } else {
+                    name = getNodeName(
+                        ts.ts_tree_cursor_current_node(&self.cursor),
+                        self.source,
+                    );
+                }
+            }
+        }
     }
 
     pub fn deinit(self: *Self) void {
@@ -168,20 +242,18 @@ test "generator" {
         \\ let main =
         \\   let a = 2
         \\   and b = 10
+        \\   and mul = 10
         \\   in  mul a b
     ;
 
-    std.debug.print("\n", .{});
     var ctx = try genOwnedCtx(tst.allocator, source);
     defer ctx.code.deinit();
     defer ctx.table.deinit();
 
-    const str = try nir.toString(tst.allocator, ctx.code.items);
+    const str = try nir.toString(tst.allocator, ctx.code.items, source);
     defer tst.allocator.free(str);
 
     std.debug.print("{s}\n", .{str});
-    const a = ctx.table.get("main").?;
-
-    std.debug.print("{d} \n", .{a.ins});
-    try tst.expectEqual(a.ins, 0);
+    const main = ctx.table.get("main").?;
+    try tst.expectEqual(main.ins, 8);
 }
