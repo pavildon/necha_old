@@ -9,35 +9,55 @@ module.exports = grammar({
     source_file: $ => seq(
       optional(repeat1($.let_expr))),
 
+    boolean: $ => choice("true", "false"),
+
     let_expr: $ => seq(
       "let",
-      field("def", repeat(seq($.def, "and"))),
-      field("def", $.def)),
+      field("def", $.def),
+      optional(field("def", repeat(seq("and", $.def))))),
 
     def: $ => seq(
       field('ident', $.identifier),
       "=",
       field('expr', $._exprz)),
 
-    _exprz: $ => choice(
-      field('number', $.number),
+    _callable: $ => prec.right(1, choice(
       field('ident', $.identifier),
+    )),
+
+    _args: $ => prec.right(1, choice(
+      $._callable,
+      field('number', $.number),
+    )),
+
+    _exprz: $ => prec.right(2, choice(
       field('let_in', $.let_in_expr),
       field('fn_call', $.fn_call),
+      field('calc', $.calc),
       field('boolean', $.boolean),
-    ),
+      $._args,
+    )),
 
-    boolean: $ => choice("true", "false"),
+    fn_call: $ => prec.right(3, seq(
+      $._callable,
+      repeat1($._args))),
 
-    fn_call: $ => seq(
-      field('function', $.identifier),
-      field('arg', repeat1(choice($.identifier, $.number)))),
+    _calc: $ => choice(field('mul', $.mul), field('add', $.plus)),
+
+    calc: $ => seq(
+      $._calc,
+      repeat1(
+        choice(
+          field('ident', $.identifier),
+          field('number', $.number)))),
 
     let_in_expr: $ => seq(
       "let",
-      field('def', seq(repeat(seq($.def, "and")), $.def)),
+      field('def', $.def),
+      field('def', optional(repeat(seq("and", $.def)))),
       "in",
       field('expr', $._exprz)),
+
 
     import_decl: $ => prec.right(99, seq(
       field('visibility', optional($.pub)),

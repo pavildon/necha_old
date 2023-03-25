@@ -798,6 +798,52 @@
     }
   },
   {
+    "type": "calc",
+    "named": true,
+    "fields": {
+      "add": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "plus",
+            "named": true
+          }
+        ]
+      },
+      "ident": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "mul": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "mul",
+            "named": true
+          }
+        ]
+      },
+      "number": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "number",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "declaration",
     "named": true,
     "fields": {
@@ -929,12 +975,26 @@
           }
         ]
       },
+      "calc": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "calc",
+            "named": true
+          }
+        ]
+      },
       "expr": {
         "multiple": false,
         "required": true,
         "types": [
           {
             "type": "boolean",
+            "named": true
+          },
+          {
+            "type": "calc",
             "named": true
           },
           {
@@ -1001,26 +1061,22 @@
     "type": "fn_call",
     "named": true,
     "fields": {
-      "arg": {
+      "ident": {
         "multiple": true,
         "required": true,
         "types": [
           {
             "type": "identifier",
             "named": true
-          },
-          {
-            "type": "number",
-            "named": true
           }
         ]
       },
-      "function": {
-        "multiple": false,
-        "required": true,
+      "number": {
+        "multiple": true,
+        "required": false,
         "types": [
           {
-            "type": "identifier",
+            "type": "number",
             "named": true
           }
         ]
@@ -1781,6 +1837,16 @@
           }
         ]
       },
+      "calc": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "calc",
+            "named": true
+          }
+        ]
+      },
       "def": {
         "multiple": true,
         "required": true,
@@ -1801,6 +1867,10 @@
         "types": [
           {
             "type": "boolean",
+            "named": true
+          },
+          {
+            "type": "calc",
             "named": true
           },
           {

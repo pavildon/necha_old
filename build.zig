@@ -83,7 +83,6 @@ pub fn build(b: *std.build.Builder) void {
     exe_tests.linkLibC();
     exe_tests.linkLibrary(tree_sitter);
     exe_tests.linkLibrary(quickjs);
-    exe_tests.setExecCmd(&.{"ls"});
 
     if (target.getOsTag() == .windows) {
         quickjs.addIncludePath("deps/mingw-w64-winpthreads/include");

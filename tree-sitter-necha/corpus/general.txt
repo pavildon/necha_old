@@ -12,7 +12,11 @@ let f = 1
 let g = 
   let h = 2
   and i = true
-  in  sum h i
+  in  * h i
+
+let write = 0
+let main = write a b
+
 ---
 (source_file
   (let_expr
@@ -25,9 +29,9 @@ let g =
     def: (def
       ident: (identifier)
       fn_call: (fn_call 
-        function: (identifier) 
-        arg: (number) 
-        arg: (identifier)))
+        ident: (identifier) 
+        number: (number) 
+        ident: (identifier)))
     def: (def
       ident: (identifier)
       boolean: (boolean))
@@ -48,7 +52,18 @@ let g =
         def: (def
           ident: (identifier)
           boolean: (boolean))
-        fn_call: (fn_call
-          function: (identifier)
-          arg: (identifier)
-          arg: (identifier))))))
+        calc: (calc
+            mul: (mul)
+            ident: (identifier)
+            ident: (identifier)))))
+      (let_expr
+        def: (def
+          ident: (identifier)
+          number: (number)))
+      (let_expr
+        def: (def
+          ident: (identifier)
+          fn_call: (fn_call
+            ident: (identifier)
+            ident: (identifier)
+            ident: (identifier)))))
