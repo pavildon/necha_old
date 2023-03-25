@@ -83,13 +83,14 @@ pub fn build(b: *std.build.Builder) void {
     exe_tests.linkLibC();
     exe_tests.linkLibrary(tree_sitter);
     exe_tests.linkLibrary(quickjs);
+    exe_tests.setExecCmd(&.{"ls"});
 
     if (target.getOsTag() == .windows) {
         quickjs.addIncludePath("deps/mingw-w64-winpthreads/include");
         exe_tests.addObjectFile("deps/mingw-w64-winpthreads/lib/libpthread.a");
     }
     const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&exe_tests.step);
+    test_step.dependOn(&b.addRunArtifact(exe_tests).step);
 
     exe.linkLibrary(tree_sitter);
 
