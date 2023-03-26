@@ -35,6 +35,7 @@ module.exports = grammar({
       field('fn_call', $.fn_call),
       field('calc', $.calc),
       field('boolean', $.boolean),
+      field('lambda', $.lambda),
       $._args,
     )),
 
@@ -58,6 +59,13 @@ module.exports = grammar({
       "in",
       field('expr', $._exprz)),
 
+    arrow: $ => '->',
+
+    lambda: $ => seq(
+      "fn",
+      repeat1(field('ident', $.identifier)),
+      field('arrow', $.arrow),
+      $._exprz),
 
     import_decl: $ => prec.right(99, seq(
       field('visibility', optional($.pub)),
@@ -67,6 +75,7 @@ module.exports = grammar({
       'import',
       field('file', $.string)
     )),
+
 
     declaration: $ => prec.right(100, seq(
       field('visibility', optional($.pub)),

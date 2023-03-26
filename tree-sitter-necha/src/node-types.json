@@ -1006,6 +1006,10 @@
             "named": true
           },
           {
+            "type": "lambda",
+            "named": true
+          },
+          {
             "type": "let_in_expr",
             "named": true
           },
@@ -1031,6 +1035,16 @@
         "types": [
           {
             "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "lambda": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "lambda",
             "named": true
           }
         ]
@@ -1804,6 +1818,92 @@
     }
   },
   {
+    "type": "lambda",
+    "named": true,
+    "fields": {
+      "arrow": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "arrow",
+            "named": true
+          }
+        ]
+      },
+      "boolean": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "boolean",
+            "named": true
+          }
+        ]
+      },
+      "calc": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "calc",
+            "named": true
+          }
+        ]
+      },
+      "fn_call": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "fn_call",
+            "named": true
+          }
+        ]
+      },
+      "ident": {
+        "multiple": true,
+        "required": true,
+        "types": [
+          {
+            "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "lambda": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "lambda",
+            "named": true
+          }
+        ]
+      },
+      "let_in": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "let_in_expr",
+            "named": true
+          }
+        ]
+      },
+      "number": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "number",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "let_expr",
     "named": true,
     "fields": {
@@ -1882,6 +1982,10 @@
             "named": true
           },
           {
+            "type": "lambda",
+            "named": true
+          },
+          {
             "type": "let_in_expr",
             "named": true
           },
@@ -1907,6 +2011,16 @@
         "types": [
           {
             "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "lambda": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "lambda",
             "named": true
           }
         ]
@@ -2545,6 +2659,10 @@
     "named": false
   },
   {
+    "type": "arrow",
+    "named": true
+  },
+  {
     "type": "bang",
     "named": true
   },
@@ -2574,6 +2692,10 @@
   },
   {
     "type": "false",
+    "named": false
+  },
+  {
+    "type": "fn",
     "named": false
   },
   {

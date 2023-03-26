@@ -181,6 +181,14 @@
             }
           },
           {
+            "type": "FIELD",
+            "name": "lambda",
+            "content": {
+              "type": "SYMBOL",
+              "name": "lambda"
+            }
+          },
+          {
             "type": "SYMBOL",
             "name": "_args"
           }
@@ -315,6 +323,42 @@
             "type": "SYMBOL",
             "name": "_exprz"
           }
+        }
+      ]
+    },
+    "arrow": {
+      "type": "STRING",
+      "value": "->"
+    },
+    "lambda": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "fn"
+        },
+        {
+          "type": "REPEAT1",
+          "content": {
+            "type": "FIELD",
+            "name": "ident",
+            "content": {
+              "type": "SYMBOL",
+              "name": "identifier"
+            }
+          }
+        },
+        {
+          "type": "FIELD",
+          "name": "arrow",
+          "content": {
+            "type": "SYMBOL",
+            "name": "arrow"
+          }
+        },
+        {
+          "type": "SYMBOL",
+          "name": "_exprz"
         }
       ]
     },
