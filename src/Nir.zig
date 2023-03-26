@@ -46,6 +46,18 @@ pub fn toString(allocator: std.mem.Allocator, instr: []const Instr, source: ?[]c
                 "{d}. call %{d}\n",
                 .{ n, c.reg },
             ),
+            .fun => |f| try writer.print(
+                "{d}. fun %{d}\n",
+                .{ n, f.end },
+            ),
+            .pop_param => try writer.print(
+                "{d}. pop_param\n",
+                .{n},
+            ),
+            .ret => |r| try writer.print(
+                "{d}. ret %{d}\n",
+                .{ n, r.reg },
+            ),
             .undef => |u| {
                 if (source) |src| {
                     try writer.print(
@@ -59,7 +71,7 @@ pub fn toString(allocator: std.mem.Allocator, instr: []const Instr, source: ?[]c
                     );
                 }
             },
-            else => _ = try writer.print("{d}. unknown\n", .{n}),
+//            else => _ = try writer.print("{d}. unknown\n", .{n}),
         }
     }
     return result.toOwnedSlice(allocator);

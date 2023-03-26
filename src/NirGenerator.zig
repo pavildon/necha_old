@@ -17,6 +17,8 @@ var f_calc: ts.TSFieldId = undefined;
 var f_mul: ts.TSFieldId = undefined;
 var f_add: ts.TSFieldId = undefined;
 var f_arg: ts.TSFieldId = undefined;
+var f_lambda: ts.TSFieldId = undefined;
+var f_arrow: ts.TSFieldId = undefined;
 
 const ParseError = error{
     InvalidSource,
@@ -49,6 +51,8 @@ fn setFieldIds() void {
     f_mul = ts.ts_language_field_id_for_name(tree_sitter_necha(), "mul", "mul".len);
     f_add = ts.ts_language_field_id_for_name(tree_sitter_necha(), "add", "add".len);
     f_arg = ts.ts_language_field_id_for_name(tree_sitter_necha(), "arg", "arg".len);
+    f_lambda = ts.ts_language_field_id_for_name(tree_sitter_necha(), "lambda", "lambda".len);
+    f_arrow = ts.ts_language_field_id_for_name(tree_sitter_necha(), "arrow", "arrow".len);
 }
 
 fn getNodeName(node: ts.TSNode, source: []const u8) []const u8 {
@@ -106,7 +110,6 @@ const Generator = struct {
             if (field_id == f_def) {
                 try self.def();
             } else if (field_id > 0 and field_id != f_def) {
-                _ = ts.ts_tree_cursor_goto_parent(&self.cursor);
                 return try self.expr();
             } else {
                 const name = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
@@ -187,6 +190,11 @@ const Generator = struct {
             return try self.calc();
         } else if (field_id == f_fn_call) {
             return try self.fn_call();
+        } else if (field_id == f_lambda) {
+            try self.table.push();
+            const r = try self.lambda();
+            try self.table.pop();
+            return r;
         } else {
             return try self.insert_undef();
         }
@@ -237,7 +245,36 @@ const Generator = struct {
         }
         try self.instructions.append(.{ .call = .{ .reg = function } });
         self.instructions.items[begin] = .{ .begin_call = .{ .end = self.instructions.items.len - 1 } };
+        _ = ts.ts_tree_cursor_goto_parent(&self.cursor);
         return begin;
+    }
+
+    fn lambda(self: *Self) ParseError!u64 {
+        try self.instructions.append(.{ .fun = .{ .end = 0 } });
+        const fun = self.instructions.items.len - 1;
+
+        var cursor_moved = ts.ts_tree_cursor_goto_first_child(&self.cursor);
+        var id = ts.ts_tree_cursor_current_field_id(&self.cursor);
+        std.debug.print("f id :: {d} \n", .{id});
+        cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor);
+        while (id != f_arrow) : (cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) {
+            const name = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
+            id = ts.ts_tree_cursor_current_field_id(&self.cursor);
+            std.debug.print("id :: {d} {s}\n", .{ id, name });
+            if (id == f_ident) {
+                try self.instructions.append(.{ .pop_param = .{ .nop = 0 } });
+                //                const name = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
+                const ip = self.instructions.items.len - 1;
+                try self.table.put(name, ip, true);
+            }
+        }
+
+        const ret = try self.expr();
+
+        try self.instructions.append(.{ .ret = .{ .reg = ret } });
+        self.instructions.items[fun] = .{ .fun = .{ .end = self.instructions.items.len - 1 } };
+        _ = ts.ts_tree_cursor_goto_parent(&self.cursor);
+        return fun;
     }
 
     pub fn insert_undef(self: *Self) !usize {
@@ -302,6 +339,8 @@ fn printFieldIds() void {
     std.debug.print("f_mul {d}\n", .{f_mul});
     std.debug.print("f_add {d}\n", .{f_add});
     std.debug.print("f_arg {d}\n", .{f_arg});
+    std.debug.print("f_lambda {d}\n", .{f_lambda});
+    std.debug.print("f_arrow {d}\n", .{f_arrow});
 }
 
 fn printSource(instr: []const nir.Instr, source: ?[]const u8) !void {
@@ -453,7 +492,6 @@ test "fn call" {
     var ctx = try genOwnedCtx(tst.allocator, source);
     defer ctx.deinit();
 
-    try printSource(ctx.code.items, source);
     const v_write = ctx.table.get("write").?;
     const v_a = ctx.table.get("a").?;
     const v_b = ctx.table.get("b").?;
@@ -481,4 +519,67 @@ test "fn call" {
     try tst.expectEqual(@intCast(u64, 1), v_a.ins);
     try tst.expectEqual(@intCast(u64, 2), v_b.ins);
     try tst.expectEqual(@intCast(u64, 3), v_main.ins);
+}
+
+test "let in #1" {
+    const source =
+        \\ let main = let a = 1 in a
+    ;
+
+    var ctx = try genOwnedCtx(tst.allocator, source);
+    defer ctx.deinit();
+
+    const v_main = ctx.table.get("main").?;
+
+    const i_main = ctx.code.items[0];
+
+    try tst.expectEqual(@intCast(u64, 1), ctx.code.items.len);
+    try tst.expectEqual(@intCast(u64, 1), i_main.number);
+    try tst.expectEqual(@intCast(u64, 0), v_main.ins);
+}
+
+test "let in #2" {
+    const source =
+        \\ let nine = 9
+        \\ let main = let a = nine in a
+    ;
+
+    var ctx = try genOwnedCtx(tst.allocator, source);
+    defer ctx.deinit();
+
+    const v_nine = ctx.table.get("nine").?;
+    const v_main = ctx.table.get("main").?;
+
+    const i_main = ctx.code.items[0];
+
+    try tst.expectEqual(@intCast(u64, 1), ctx.code.items.len);
+    try tst.expectEqual(@intCast(u64, 9), i_main.number);
+    try tst.expectEqual(@intCast(u64, 0), v_main.ins);
+    try tst.expectEqual(@intCast(u64, 0), v_nine.ins);
+}
+
+test "fn" {
+    const source =
+        \\ let double = fn a -> * a 2
+        \\ let main = double 10
+    ;
+
+    var ctx = try genOwnedCtx(tst.allocator, source);
+    defer ctx.deinit();
+
+    printFieldIds();
+    try printSource(ctx.code.items, source);
+    const v_double = ctx.table.get("double").?;
+    const i_double = ctx.code.items[0];
+    const i_pop = ctx.code.items[1];
+    const i_ret = ctx.code.items[4];
+
+    const v_main = ctx.table.get("main").?;
+
+    try tst.expectEqual(@intCast(u64, 9), ctx.code.items.len);
+    try tst.expectEqual(@intCast(u64, 4), i_double.fun.end);
+    try tst.expectEqual(@intCast(u64, 0), i_pop.pop_param.nop);
+    try tst.expectEqual(@intCast(u64, 3), i_ret.ret.reg);
+    try tst.expectEqual(@intCast(u64, 0), v_double.ins);
+    try tst.expectEqual(@intCast(u64, 5), v_main.ins);
 }
