@@ -2,6 +2,8 @@ const std = @import("std");
 const tst = std.testing;
 
 const nir = @import("Nir.zig");
+const nr = @import("NirRunner.zig");
+
 const SymbolTable = @import("SymbolTable.zig").SymbolTable;
 
 const ts = @cImport(@cInclude("tree_sitter/api.h"));
@@ -19,6 +21,11 @@ var f_add: ts.TSFieldId = undefined;
 var f_arg: ts.TSFieldId = undefined;
 var f_lambda: ts.TSFieldId = undefined;
 var f_arrow: ts.TSFieldId = undefined;
+
+var f_bool: ts.TSFieldId = undefined;
+var f_if: ts.TSFieldId = undefined;
+var f_then: ts.TSFieldId = undefined;
+var f_else: ts.TSFieldId = undefined;
 
 const ParseError = error{
     InvalidSource,
@@ -53,6 +60,10 @@ fn setFieldIds() void {
     f_arg = ts.ts_language_field_id_for_name(tree_sitter_necha(), "arg", "arg".len);
     f_lambda = ts.ts_language_field_id_for_name(tree_sitter_necha(), "lambda", "lambda".len);
     f_arrow = ts.ts_language_field_id_for_name(tree_sitter_necha(), "arrow", "arrow".len);
+    f_bool = ts.ts_language_field_id_for_name(tree_sitter_necha(), "boolean", "boolean".len);
+    f_if = ts.ts_language_field_id_for_name(tree_sitter_necha(), "if", "if".len);
+    f_then = ts.ts_language_field_id_for_name(tree_sitter_necha(), "then", "then".len);
+    f_else = ts.ts_language_field_id_for_name(tree_sitter_necha(), "else", "else".len);
 }
 
 fn getNodeName(node: ts.TSNode, source: []const u8) []const u8 {
@@ -79,28 +90,58 @@ const Generator = struct {
                 unreachable;
             } else if (std.mem.eql(u8, std.mem.span(node_type), "let_expr")) {
                 _ = try self.let_root();
-            } else {
-                std.debug.print("other !\n", .{});
             }
         }
     }
 
     fn let_root(self: *Self) ParseError!usize {
-        _ = ts.ts_tree_cursor_goto_first_child(&self.cursor);
-        var cursor_moved = true;
+        var cursor_moved = ts.ts_tree_cursor_goto_first_child(&self.cursor);
         while (cursor_moved) : (cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) {
             const field_id = ts.ts_tree_cursor_current_field_id(&self.cursor);
             if (field_id == f_def) {
                 try self.def();
             } else if (field_id > 0) {
                 return try self.expr();
-            } else {
-                const name = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
-                std.debug.print("Keyword : {s} \n", .{name});
             }
         }
         _ = ts.ts_tree_cursor_goto_parent(&self.cursor);
         return 0;
+    }
+
+    fn if_expr(self: *Self) ParseError!usize {
+        // if
+        if (!ts.ts_tree_cursor_goto_first_child(&self.cursor)) unreachable;
+
+        if (!ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) unreachable;
+        const condition = try self.expr();
+        try self.instructions.append(.{ .cnd = .{ .reg = condition, .f = 0 } });
+        const cnd_ins = self.instructions.items.len - 1;
+
+        // then
+        if (!ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) unreachable;
+
+        if (!ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) unreachable;
+        const t = try self.expr();
+        try self.instructions.append(.{ .brk = .{ .reg = t, .end = 0 } });
+        const tb_ins = self.instructions.items.len - 1;
+
+        // else
+        if (!ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) unreachable;
+
+        if (!ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) unreachable;
+        const f = try self.expr();
+        try self.instructions.append(.{ .brk = .{ .reg = f, .end = 0 } });
+        const fb_ins = self.instructions.items.len - 1;
+
+        const end = self.instructions.items.len - 1;
+
+        self.instructions.items[cnd_ins] = .{ .cnd = .{ .reg = condition, .f = f } };
+        self.instructions.items[tb_ins] = .{ .brk = .{ .reg = t, .end = end } };
+        self.instructions.items[fb_ins] = .{ .brk = .{ .reg = f, .end = end } };
+
+        _ = ts.ts_tree_cursor_goto_parent(&self.cursor);
+
+        return condition;
     }
 
     fn let_in(self: *Self) ParseError!usize {
@@ -110,14 +151,11 @@ const Generator = struct {
             if (field_id == f_def) {
                 try self.def();
             } else if (field_id > 0 and field_id != f_def) {
-                return try self.expr();
-            } else {
-                const name = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
-                std.debug.print("keywords {s}\n", .{name});
+                const r = try self.expr();
+                _ = ts.ts_tree_cursor_goto_parent(&self.cursor);
+                return r;
             }
         }
-
-        _ = ts.ts_tree_cursor_goto_parent(&self.cursor);
         return 0;
     }
 
@@ -137,11 +175,10 @@ const Generator = struct {
                 } else {
                     name = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
                 }
+            } else {
+                var unk = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
+                _ = unk;
             }
-            //            else {
-            //                var unk = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
-            //                std.debug.print("{s}\n", .{unk});
-            //            }
         }
     }
 
@@ -153,9 +190,23 @@ const Generator = struct {
         const result = std.zig.parseNumberLiteral(num_str);
         switch (result) {
             .int => |n| {
-                try self.instructions.append(.{ .number = n });
+                try self.instructions.append(.{ .U64 = n });
             },
             else => unreachable,
+        }
+        return self.instructions.items.len - 1;
+    }
+
+    fn boolean(self: *Self) !usize {
+        const bool_str = getNodeName(
+            ts.ts_tree_cursor_current_node(&self.cursor),
+            self.source,
+        );
+        const result = std.mem.eql(u8, bool_str, "true");
+        if (result) {
+            try self.instructions.append(.{ .Bool = true });
+        } else {
+            try self.instructions.append(.{ .Bool = false });
         }
         return self.instructions.items.len - 1;
     }
@@ -179,6 +230,13 @@ const Generator = struct {
 
         if (field_id == f_number) {
             return try self.number();
+        } else if (field_id == f_bool) {
+            return try self.boolean();
+        } else if (field_id == f_if) {
+            try self.table.push();
+            const r = try self.if_expr();
+            try self.table.pop();
+            return r;
         } else if (field_id == f_ident) {
             return try self.ident();
         } else if (field_id == f_let_in) {
@@ -235,14 +293,22 @@ const Generator = struct {
 
         var id = ts.ts_tree_cursor_current_field_id(&self.cursor);
 
+        var args: [10]usize = [_]usize{0} ** 10;
+        var arg_n: usize = 9;
+
         cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor);
         while (cursor_moved) : (cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) {
             id = ts.ts_tree_cursor_current_field_id(&self.cursor);
             if (id > 0) {
-                const i = try self.expr();
-                try self.instructions.append(.{ .push_param = .{ .reg = i } });
+                args[arg_n] = try self.expr();
+                arg_n -= 1;
             }
         }
+
+        for (args[arg_n + 1 ..]) |arg| {
+            try self.instructions.append(.{ .push_param = .{ .reg = arg } });
+        }
+
         try self.instructions.append(.{ .call = .{ .reg = function } });
         self.instructions.items[begin] = .{ .begin_call = .{ .end = self.instructions.items.len - 1 } };
         _ = ts.ts_tree_cursor_goto_parent(&self.cursor);
@@ -255,12 +321,10 @@ const Generator = struct {
 
         var cursor_moved = ts.ts_tree_cursor_goto_first_child(&self.cursor);
         var id = ts.ts_tree_cursor_current_field_id(&self.cursor);
-        std.debug.print("f id :: {d} \n", .{id});
         cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor);
         while (id != f_arrow) : (cursor_moved = ts.ts_tree_cursor_goto_next_sibling(&self.cursor)) {
             const name = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
             id = ts.ts_tree_cursor_current_field_id(&self.cursor);
-            std.debug.print("id :: {d} {s}\n", .{ id, name });
             if (id == f_ident) {
                 try self.instructions.append(.{ .pop_param = .{ .nop = 0 } });
                 //                const name = getNodeName(ts.ts_tree_cursor_current_node(&self.cursor), self.source);
@@ -360,7 +424,7 @@ test "root let number" {
     const ins = ctx.code.items[0];
 
     try tst.expectEqual(@intCast(u64, 1), ctx.code.items.len);
-    try tst.expectEqual(@intCast(u64, 1), ins.number);
+    try tst.expectEqual(@intCast(u64, 1), ins.U64);
     try tst.expectEqual(@intCast(u64, 0), main.ins);
 }
 
@@ -378,7 +442,7 @@ test "multiple root let" {
     const ins = ctx.code.items[0];
 
     try tst.expectEqual(@intCast(u64, 1), ctx.code.items.len);
-    try tst.expectEqual(@intCast(u64, 2), ins.number);
+    try tst.expectEqual(@intCast(u64, 2), ins.U64);
     try tst.expectEqual(@intCast(u64, 0), main.ins);
     try tst.expectEqual(@intCast(u64, 0), two.ins);
 }
@@ -397,7 +461,7 @@ test "let root with ands" {
     const ins = ctx.code.items[0];
 
     try tst.expectEqual(@intCast(u64, 1), ctx.code.items.len);
-    try tst.expectEqual(@intCast(u64, 2), ins.number);
+    try tst.expectEqual(@intCast(u64, 2), ins.U64);
     try tst.expectEqual(@intCast(u64, 0), main.ins);
     try tst.expectEqual(@intCast(u64, 0), two.ins);
 }
@@ -419,7 +483,7 @@ test "let ands and roots" {
     const ins = ctx.code.items[0];
 
     try tst.expectEqual(@intCast(u64, 1), ctx.code.items.len);
-    try tst.expectEqual(@intCast(u64, 2), ins.number);
+    try tst.expectEqual(@intCast(u64, 2), ins.U64);
     try tst.expectEqual(@intCast(u64, 0), main.ins);
     try tst.expectEqual(@intCast(u64, 0), two.ins);
     try tst.expectEqual(@intCast(u64, 0), also_two.ins);
@@ -440,8 +504,8 @@ test "calc expr" {
 
     try tst.expectEqual(@intCast(u64, 3), ctx.code.items.len);
 
-    try tst.expectEqual(@intCast(u64, 1), one.number);
-    try tst.expectEqual(@intCast(u64, 3), three.number);
+    try tst.expectEqual(@intCast(u64, 1), one.U64);
+    try tst.expectEqual(@intCast(u64, 3), three.U64);
 
     try tst.expectEqual(@intCast(u64, 0), add.add.lhs);
     try tst.expectEqual(@intCast(u64, 1), add.add.rhs);
@@ -470,8 +534,8 @@ test "calc #2" {
 
     try tst.expectEqual(@intCast(u64, 3), ctx.code.items.len);
 
-    try tst.expectEqual(@intCast(u64, 3), a.number);
-    try tst.expectEqual(@intCast(u64, 2), b.number);
+    try tst.expectEqual(@intCast(u64, 3), a.U64);
+    try tst.expectEqual(@intCast(u64, 2), b.U64);
 
     try tst.expectEqual(@intCast(u64, 0), mul.mul.lhs);
     try tst.expectEqual(@intCast(u64, 1), mul.mul.rhs);
@@ -507,12 +571,13 @@ test "fn call" {
 
     try tst.expectEqual(@intCast(u64, 7), ctx.code.items.len);
 
-    try tst.expectEqual(@intCast(u64, 0), i_write.number);
-    try tst.expectEqual(@intCast(u64, 2), i_a.number);
-    try tst.expectEqual(@intCast(u64, 10), i_b.number);
+    try tst.expectEqual(@intCast(u64, 0), i_write.U64);
+    try tst.expectEqual(@intCast(u64, 2), i_a.U64);
+    try tst.expectEqual(@intCast(u64, 10), i_b.U64);
     try tst.expectEqual(@intCast(u64, 6), i_main.begin_call.end);
-    try tst.expectEqual(@intCast(u64, 1), i_push1.push_param.reg);
-    try tst.expectEqual(@intCast(u64, 2), i_push2.push_param.reg);
+    // swapped
+    try tst.expectEqual(@intCast(u64, 2), i_push1.push_param.reg);
+    try tst.expectEqual(@intCast(u64, 1), i_push2.push_param.reg);
     try tst.expectEqual(@intCast(u64, 0), i_call.call.reg);
 
     try tst.expectEqual(@intCast(u64, 0), v_write.ins);
@@ -534,7 +599,7 @@ test "let in #1" {
     const i_main = ctx.code.items[0];
 
     try tst.expectEqual(@intCast(u64, 1), ctx.code.items.len);
-    try tst.expectEqual(@intCast(u64, 1), i_main.number);
+    try tst.expectEqual(@intCast(u64, 1), i_main.U64);
     try tst.expectEqual(@intCast(u64, 0), v_main.ins);
 }
 
@@ -553,7 +618,7 @@ test "let in #2" {
     const i_main = ctx.code.items[0];
 
     try tst.expectEqual(@intCast(u64, 1), ctx.code.items.len);
-    try tst.expectEqual(@intCast(u64, 9), i_main.number);
+    try tst.expectEqual(@intCast(u64, 9), i_main.U64);
     try tst.expectEqual(@intCast(u64, 0), v_main.ins);
     try tst.expectEqual(@intCast(u64, 0), v_nine.ins);
 }
@@ -567,8 +632,6 @@ test "fn" {
     var ctx = try genOwnedCtx(tst.allocator, source);
     defer ctx.deinit();
 
-    printFieldIds();
-    try printSource(ctx.code.items, source);
     const v_double = ctx.table.get("double").?;
     const i_double = ctx.code.items[0];
     const i_pop = ctx.code.items[1];
@@ -582,4 +645,135 @@ test "fn" {
     try tst.expectEqual(@intCast(u64, 3), i_ret.ret.reg);
     try tst.expectEqual(@intCast(u64, 0), v_double.ins);
     try tst.expectEqual(@intCast(u64, 5), v_main.ins);
+
+    var runner = try nr.NirRunner.init(tst.allocator);
+    defer runner.deinit();
+}
+
+test "fn" {
+    const source =
+        \\ let double = fn a b -> * a b
+        \\ let main = double 2 10
+    ;
+
+    var ctx = try genOwnedCtx(tst.allocator, source);
+    defer ctx.deinit();
+}
+
+test "fn2" {
+    const source =
+        \\ let double = fn a -> * a 2
+        \\ let apply = fn f a -> f a
+        \\ let main = apply double 10
+    ;
+
+    var ctx = try genOwnedCtx(tst.allocator, source);
+    defer ctx.deinit();
+
+    const v_double = ctx.table.get("double").?;
+    const i_double = ctx.code.items[0];
+    const v_apply = ctx.table.get("apply").?;
+    const i_apply = ctx.code.items[5];
+
+    const v_main = ctx.table.get("main").?;
+
+    try tst.expectEqual(@intCast(u64, 17), ctx.code.items.len);
+    try tst.expectEqual(@intCast(u64, 4), i_double.fun.end);
+    try tst.expectEqual(@intCast(u64, 0), v_double.ins);
+    try tst.expectEqual(@intCast(u64, 11), i_apply.fun.end);
+    try tst.expectEqual(@intCast(u64, 5), v_apply.ins);
+
+    try tst.expectEqual(@intCast(u64, 12), v_main.ins);
+
+    var sctx: usize = 999;
+    var runner = try nr.NirMachine(usize).init(tst.allocator, &sctx);
+    defer runner.deinit();
+
+    try runner.run(ctx.code.items);
+    const state = runner.state();
+    const cv = state.reg.get(10) orelse unreachable;
+    try tst.expectEqual(@intCast(u64, 20), cv.U64);
+}
+
+test "frame pointer" {
+    const source =
+        \\ let double = fn a -> let t = 2 and zz = a in * zz t
+        \\
+        \\ let main =
+        \\   let a = 5 and
+        \\       a1 = + a 16 and
+        \\       r = double a1 in
+        \\       r
+        \\
+    ;
+
+    var ctx = try genOwnedCtx(tst.allocator, source);
+    defer ctx.deinit();
+
+    var sctx: usize = 999;
+
+    const v_main = ctx.table.get("main").?;
+
+    try tst.expectEqual(@intCast(u64, 8), v_main.ins);
+
+    var runner = try nr.NirMachine(usize).init(tst.allocator, &sctx);
+    defer runner.deinit();
+
+    try runner.run(ctx.code.items);
+    const state = runner.state();
+    const cv = state.reg.get(10) orelse unreachable;
+
+    try tst.expectEqual(@intCast(u64, 42), cv.U64);
+}
+
+test "booleans" {
+    const source =
+        \\ let t = true
+        \\ let f = false
+    ;
+
+    var ctx = try genOwnedCtx(tst.allocator, source);
+    defer ctx.deinit();
+
+    const v_t = ctx.table.get("t").?;
+    const v_f = ctx.table.get("f").?;
+
+    const i_t = ctx.code.items[0];
+    const i_f = ctx.code.items[1];
+
+    try tst.expectEqual(@intCast(u64, 0), v_t.ins);
+    try tst.expectEqual(@intCast(u64, 1), v_f.ins);
+
+    try tst.expectEqual(true, i_t.Bool);
+    try tst.expectEqual(false, i_f.Bool);
+}
+
+test "if_then_else" {
+    const source =
+        \\ let t = true
+        \\ let aa  = if t then 1 else 0
+        \\ let bb = if false then 1 else 0
+    ;
+
+    var ctx = try genOwnedCtx(tst.allocator, source);
+    defer ctx.deinit();
+    try printSource(ctx.code.items, source);
+
+    const v_t = ctx.table.get("aa").?;
+    const i_t = ctx.code.items[1];
+
+    try tst.expectEqual(@intCast(u64, 0), v_t.ins);
+    try tst.expectEqual(@intCast(u64, 4), i_t.cnd.f);
+
+    var sctx: usize = 999;
+    var runner = try nr.NirMachine(usize).init(tst.allocator, &sctx);
+    defer runner.deinit();
+
+    try runner.run(ctx.code.items);
+    const state = runner.state();
+    const cv1 = state.reg.get(1) orelse unreachable;
+    const cv2 = state.reg.get(7) orelse unreachable;
+
+    try tst.expectEqual(@intCast(u64, 1), cv1.U64);
+    try tst.expectEqual(@intCast(u64, 0), cv2.U64);
 }

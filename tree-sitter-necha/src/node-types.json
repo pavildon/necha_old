@@ -1006,6 +1006,10 @@
             "named": true
           },
           {
+            "type": "if_expr",
+            "named": true
+          },
+          {
             "type": "lambda",
             "named": true
           },
@@ -1035,6 +1039,16 @@
         "types": [
           {
             "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "if": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "if_expr",
             "named": true
           }
         ]
@@ -1075,6 +1089,16 @@
     "type": "fn_call",
     "named": true,
     "fields": {
+      "boolean": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "boolean",
+            "named": true
+          }
+        ]
+      },
       "ident": {
         "multiple": true,
         "required": true,
@@ -1557,134 +1581,40 @@
     "type": "if_expr",
     "named": true,
     "fields": {
-      "condition": {
+      "boolean": {
         "multiple": true,
-        "required": true,
+        "required": false,
         "types": [
           {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
-          {
-            "type": "accessor",
+            "type": "boolean",
             "named": true
-          },
+          }
+        ]
+      },
+      "calc": {
+        "multiple": true,
+        "required": false,
+        "types": [
           {
-            "type": "array_accessor",
-            "named": true
-          },
-          {
-            "type": "assignment",
-            "named": true
-          },
-          {
-            "type": "boolean_expr",
-            "named": true
-          },
-          {
-            "type": "brace_expr",
-            "named": true
-          },
-          {
-            "type": "bracket_expr",
-            "named": true
-          },
-          {
-            "type": "function_call",
-            "named": true
-          },
-          {
-            "type": "function_def",
-            "named": true
-          },
-          {
-            "type": "identifier",
-            "named": true
-          },
-          {
-            "type": "if_expr",
-            "named": true
-          },
-          {
-            "type": "math_expr",
-            "named": true
-          },
-          {
-            "type": "number",
-            "named": true
-          },
-          {
-            "type": "record_expr",
-            "named": true
-          },
-          {
-            "type": "string",
-            "named": true
-          },
-          {
-            "type": "unary_expr",
-            "named": true
-          },
-          {
-            "type": "void_expr",
+            "type": "calc",
             "named": true
           }
         ]
       },
       "false": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
-          {
-            "type": "accessor",
+            "type": "boolean",
             "named": true
           },
           {
-            "type": "array_accessor",
+            "type": "calc",
             "named": true
           },
           {
-            "type": "assignment",
-            "named": true
-          },
-          {
-            "type": "boolean_expr",
-            "named": true
-          },
-          {
-            "type": "brace_expr",
-            "named": true
-          },
-          {
-            "type": "bracket_expr",
-            "named": true
-          },
-          {
-            "type": "declaration",
-            "named": true
-          },
-          {
-            "type": "for_stmt",
-            "named": true
-          },
-          {
-            "type": "function_call",
-            "named": true
-          },
-          {
-            "type": "function_def",
+            "type": "fn_call",
             "named": true
           },
           {
@@ -1696,85 +1626,93 @@
             "named": true
           },
           {
-            "type": "math_expr",
+            "type": "lambda",
+            "named": true
+          },
+          {
+            "type": "let_in_expr",
             "named": true
           },
           {
             "type": "number",
             "named": true
-          },
+          }
+        ]
+      },
+      "fn_call": {
+        "multiple": true,
+        "required": false,
+        "types": [
           {
-            "type": "record_expr",
+            "type": "fn_call",
             "named": true
-          },
+          }
+        ]
+      },
+      "ident": {
+        "multiple": true,
+        "required": false,
+        "types": [
           {
-            "type": "string",
+            "type": "identifier",
             "named": true
-          },
+          }
+        ]
+      },
+      "if": {
+        "multiple": true,
+        "required": false,
+        "types": [
           {
-            "type": "unary_expr",
+            "type": "if_expr",
             "named": true
-          },
+          }
+        ]
+      },
+      "lambda": {
+        "multiple": true,
+        "required": false,
+        "types": [
           {
-            "type": "void_expr",
+            "type": "lambda",
             "named": true
-          },
+          }
+        ]
+      },
+      "let_in": {
+        "multiple": true,
+        "required": false,
+        "types": [
           {
-            "type": "while_stmt",
+            "type": "let_in_expr",
+            "named": true
+          }
+        ]
+      },
+      "number": {
+        "multiple": true,
+        "required": false,
+        "types": [
+          {
+            "type": "number",
             "named": true
           }
         ]
       },
       "true": {
-        "multiple": true,
+        "multiple": false,
         "required": true,
         "types": [
           {
-            "type": "(",
-            "named": false
-          },
-          {
-            "type": ")",
-            "named": false
-          },
-          {
-            "type": "accessor",
+            "type": "boolean",
             "named": true
           },
           {
-            "type": "array_accessor",
+            "type": "calc",
             "named": true
           },
           {
-            "type": "assignment",
-            "named": true
-          },
-          {
-            "type": "boolean_expr",
-            "named": true
-          },
-          {
-            "type": "brace_expr",
-            "named": true
-          },
-          {
-            "type": "bracket_expr",
-            "named": true
-          },
-          {
-            "type": "declaration",
-            "named": true
-          },
-          {
-            "type": "for_stmt",
-            "named": true
-          },
-          {
-            "type": "function_call",
-            "named": true
-          },
-          {
-            "type": "function_def",
+            "type": "fn_call",
             "named": true
           },
           {
@@ -1786,31 +1724,15 @@
             "named": true
           },
           {
-            "type": "math_expr",
+            "type": "lambda",
+            "named": true
+          },
+          {
+            "type": "let_in_expr",
             "named": true
           },
           {
             "type": "number",
-            "named": true
-          },
-          {
-            "type": "record_expr",
-            "named": true
-          },
-          {
-            "type": "string",
-            "named": true
-          },
-          {
-            "type": "unary_expr",
-            "named": true
-          },
-          {
-            "type": "void_expr",
-            "named": true
-          },
-          {
-            "type": "while_stmt",
             "named": true
           }
         ]
@@ -1867,6 +1789,16 @@
         "types": [
           {
             "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "if": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "if_expr",
             "named": true
           }
         ]
@@ -1982,6 +1914,10 @@
             "named": true
           },
           {
+            "type": "if_expr",
+            "named": true
+          },
+          {
             "type": "lambda",
             "named": true
           },
@@ -2011,6 +1947,16 @@
         "types": [
           {
             "type": "identifier",
+            "named": true
+          }
+        ]
+      },
+      "if": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "if_expr",
             "named": true
           }
         ]
@@ -2765,6 +2711,10 @@
   {
     "type": "string_fragment",
     "named": true
+  },
+  {
+    "type": "then",
+    "named": false
   },
   {
     "type": "true",

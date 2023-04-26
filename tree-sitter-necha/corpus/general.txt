@@ -20,6 +20,9 @@ let main = write a b
 let double = fn a -> mul a 2
 let main = double 10
 
+let T = true
+let F = false
+
 ---
 (source_file
   (let_expr
@@ -85,5 +88,12 @@ let main = double 10
           ident: (identifier)
           fn_call: (fn_call
             ident: (identifier)
-            number: (number)))))
-
+            number: (number))))
+      (let_expr
+        def: (def
+          ident: (identifier)
+          boolean: (boolean)))
+      (let_expr
+        def: (def
+          ident: (identifier)
+          boolean: (boolean))))

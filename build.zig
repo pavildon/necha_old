@@ -18,7 +18,7 @@ pub fn build(b: *std.build.Builder) void {
     tree_sitter.addIncludePath("deps/tree-sitter/src");
     tree_sitter.addCSourceFile("deps/tree-sitter/src/lib.c", &.{"-g"});
     tree_sitter.linkLibC();
-    tree_sitter.install();
+    b.installArtifact(tree_sitter);
 
     const quickjs = b.addStaticLibrary(.{
         .name = "quickjs",
@@ -43,7 +43,7 @@ pub fn build(b: *std.build.Builder) void {
         "-DCONFIG_BIGNUM",
     });
     quickjs.linkLibC();
-    quickjs.install();
+    b.installArtifact(quickjs);
 
     const exe = b.addExecutable(.{
         .name = "necha",
@@ -57,14 +57,15 @@ pub fn build(b: *std.build.Builder) void {
     exe.linkLibC();
     exe.linkLibrary(tree_sitter);
     exe.linkLibrary(quickjs);
-    exe.install();
+    b.installArtifact(exe);
 
     if (target.getOsTag() == .windows) {
         quickjs.addIncludePath("deps/mingw-w64-winpthreads/include");
         exe.addObjectFile("deps/mingw-w64-winpthreads/lib/libpthread.a");
     }
 
-    const run_cmd = exe.run();
+    const run_cmd = b.addRunArtifact(exe);
+
     run_cmd.step.dependOn(b.getInstallStep());
     if (b.args) |args| {
         run_cmd.addArgs(args);
@@ -83,14 +84,15 @@ pub fn build(b: *std.build.Builder) void {
     exe_tests.linkLibC();
     exe_tests.linkLibrary(tree_sitter);
     exe_tests.linkLibrary(quickjs);
-    exe_tests.setExecCmd(&.{"ls"});
+    exe_tests.setExecCmd(&.{"echo \"hello\""});
 
     if (target.getOsTag() == .windows) {
         quickjs.addIncludePath("deps/mingw-w64-winpthreads/include");
         exe_tests.addObjectFile("deps/mingw-w64-winpthreads/lib/libpthread.a");
     }
     const test_step = b.step("test", "Run unit tests");
-    test_step.dependOn(&b.addRunArtifact(exe_tests).step);
+    test_step.dependOn(&exe_tests.step);
+    //    test_step.dependOn(&b.addRunArtifact(exe_tests).step);
 
     exe.linkLibrary(tree_sitter);
 
